@@ -1,0 +1,8 @@
+pulp
+matplotlib-label-lines
+plotly
+ipywidgets>=7.5
+nbformat
+networkx
+numpy
+matplotlib
