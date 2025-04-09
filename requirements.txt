@@ -6,3 +6,4 @@ nbformat
 networkx
 numpy
 matplotlib
+osmnx
