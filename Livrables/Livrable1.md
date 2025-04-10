@@ -2,6 +2,29 @@
 
 ---
 
+## Sommaire
+
+- [📝 Livrable 1 – Modélisation et proposition d’algorithme](#-livrable-1--modélisation-et-proposition-dalgorithme)
+- [Sommaire](#sommaire)
+  - [🔹 1. Résumé du projet](#-1-résumé-du-projet)
+  - [🔹 2. Choix d’un type d’algorithme de base](#-2-choix-dun-type-dalgorithme-de-base)
+  - [🔹 3. Définition des contraintes choisies](#-3-définition-des-contraintes-choisies)
+    - [🔸 1. Coût ou restriction de passage sur certaines arêtes](#-1-coût-ou-restriction-de-passage-sur-certaines-arêtes)
+    - [🔸 2. Routes dynamiques ou perturbations](#-2-routes-dynamiques-ou-perturbations)
+  - [🔹 4. Structure des graphes](#-4-structure-des-graphes)
+    - [1. **Stockage du graphe**](#1-stockage-du-graphe)
+    - [2. **Stockage des poids des arêtes**](#2-stockage-des-poids-des-arêtes)
+    - [3. Exemple](#3-exemple)
+  - [🔹 5. Pseudo-code de l'algorithme](#-5-pseudo-code-de-lalgorithme)
+  - [🧠 Explication de l’algorithme](#-explication-de-lalgorithme)
+  - [🔹 6. Calcul de complexité de l’algorithme](#-6-calcul-de-complexité-de-lalgorithme)
+    - [🔸 Étapes de l'algorithme et leur complexité :](#-étapes-de-lalgorithme-et-leur-complexité-)
+    - [🔸 Nombre total de paliers (refroidissements) :](#-nombre-total-de-paliers-refroidissements-)
+  - [🔸 Complexité globale :](#-complexité-globale-)
+  - [✅ Conclusion simplifiée :](#-conclusion-simplifiée-)
+
+---
+
 ### 🔹 1. Résumé du projet
 
 Dans le cadre de l’appel à manifestation d’intérêt de l’ADEME, notre équipe **CesiCDP** développe une solution intelligente visant à **optimiser les tournées de livraison** de biens ou services dans un environnement urbain complexe. L’objectif est de **réduire les déplacements** et la **consommation énergétique** tout en prenant en compte des contraintes réalistes et dynamiques du terrain : **routes fermées**, **ralenties**, ou **évoluant dans le temps**.
@@ -57,6 +80,7 @@ Pour stocker le graphe et ses poids, on utilise une structure de données qui pe
 Le graphe est généralement représenté sous forme de **dictionnaire de dictionnaires** où chaque clé est un sommet, et la valeur associée est un autre dictionnaire représentant les voisins de ce sommet avec le poids de l'arête les reliant.
 
 - **Exemple** :
+
   ```python
   poids_arêtes = {
       1: {2: 10, 3: 20},  # Sommet 1, poids des arêtes vers 2 et 3
@@ -78,9 +102,7 @@ Les poids des arêtes sont stockés en fonction de deux facteurs principaux :
 - Si la distance entre les sommets `1` et `2` est de 10, avec un facteur de ralentissement de 2 (trafic ralenti), le poids sera `10 * 2 = 20`.
 - Si une route entre `2` et `3` est bloquée, le poids sera `∞` pour indiquer que cette route ne peut pas être utilisée.
 
-#### 3. **Structure de données**
-
-Le graphe et les poids sont donc stockés sous forme de **dictionnaire de dictionnaires**. Par exemple :
+#### 3. Exemple
 
 ```python
 poids_arêtes = {
@@ -89,13 +111,6 @@ poids_arêtes = {
     3: {1: 40, 2: float('inf')}   # Route bloquée entre 3 et 2
 }
 ```
-
-Ici, les poids sont calculés en fonction des distances et des conditions de trafic, et les routes bloquées sont représentées par `∞`.
-
-### Résumé
-
-- **Le graphe** est stocké sous forme de dictionnaire où chaque sommet est associé à ses voisins et à leurs poids.
-- **Les poids** des arêtes sont calculés en fonction de la distance et des facteurs comme le ralentissement ou les restrictions de passage.
 
 ---
 
@@ -128,9 +143,12 @@ Début :
     best_cost ← compute_cost(best_tour, G, t)
 
     Tant que T > T_min :
+
+        update_graph(G, t)       // 🆕 Mettre à jour les poids du graphe selon les conditions actuelles
+
         Pour i de 1 à N :
             neighbor ← generate_neighbor(current_tour)
-        
+    
             Si is_valid(neighbor, G, t) :
                 cost_neighbor ← compute_cost(neighbor, G, t)
                 cost_current ← compute_cost(current_tour, G, t)
@@ -148,62 +166,100 @@ Début :
                         current_tour ← neighbor
 
         T ← α × T     // refroidissement
-        t ← t + 1     // le temps évolue → les coûts dynamiques changent
+        t ← t + 1     // temps évolue → simulateur de trafic évolue aussi
 
 Retourner best_tour
 ```
 
+### 🧠 Explication de l’algorithme
+
+Cet algorithme de **recuit simulé** cherche une tournée efficace dans un réseau routier où les conditions peuvent changer au cours du temps (ralentissements, blocages…).
+
+Voici le principe :
+
+- On commence par une **solution initiale valide** (une tournée qui respecte les contraintes du graphe au temps `t = 0`).
+- À chaque température, on génère plusieurs solutions voisines (en modifiant légèrement la tournée).
+- Si une solution est **meilleure**, on l’accepte.
+- Si elle est **moins bonne**, on peut quand même l’accepter avec une certaine probabilité liée à la température `T` (ce qui permet d’éviter les minima locaux).
+- La **température baisse progressivement** (refroidissement), donc on devient de plus en plus strict dans les choix.
+- En parallèle, on **met à jour dynamiquement les poids des routes** à chaque itération (simulateur de trafic), ce qui modifie les coûts de chaque tournée.
+- À la fin, on retourne la **meilleure tournée trouvée**.
+
+Ce mécanisme permet de trouver de bonnes solutions même dans un environnement incertain et changeant.
+
+---
+
 ### 🔹 6. Calcul de complexité de l’algorithme
 
-Voici le **calcul de complexité** de l’algorithme de **Recuit Simulé avec contraintes dynamiques**, étape par étape :
+L’algorithme de **Recuit Simulé** repose sur deux niveaux de boucle :
+
+1. Une boucle externe de **refroidissement** (`T > T_min`)
+2. Une boucle interne de **recherche locale** de `N` voisins à chaque température
 
 ---
 
-## 🔹 **Hypothèses de base**
+#### 🔸 Étapes de l'algorithme et leur complexité :
 
-- `n` = nombre de sommets (villes à visiter)
-- `L` = longueur de la tournée (≈ `n`)
-- `k` = nombre total d'itérations (dépend de T_init, T_min et α)
+À **chaque température**, on fait les étapes suivantes :
 
-💡 Nombre d’**itérations `k`** ≈ `log(T_min / T_init) / log(α)`
-(en pratique, ce nombre est fixé à un maximum ou mesuré)
+1. `update_graph(G, t)`→ met à jour les poids des arêtes dynamiques→ **Coût : O(|E|)** (on parcourt toutes les arêtes du graphe)
+2. Boucle de `N` itérations :
 
----
+   - `generate_neighbor(tour)` → échange deux sommets→ **O(1)**
+   - `is_valid(tour, G, t)` → vérifie si la tournée utilise une route bloquée→ parcourt tous les arcs de la tournée → **O(n)**
+   - `compute_cost(tour, G, t)` → somme des coûts des arcs de la tournée
+     → **O(n)**
 
-## 🔹 **Analyse par étape**
-
-| Étape                                 | Complexité  | Détails                                            |
-| -------------------------------------- | ------------ | --------------------------------------------------- |
-| Générer solution initiale            | O(n)         | Génération d'une permutation valide de n sommets  |
-| Calcul du coût initial                | O(n)         | Coût = somme des poids d’un chemin de n-1 arêtes |
-| Générer un voisin                    | O(1) à O(n) | Permutation simple (ex: swap 2 villes)              |
-| Vérifier si le voisin est valide      | O(n)         | Vérifier que chaque arête n’a pas `poids = ∞` |
-| Calcul du coût du voisin              | O(n)         | Recalcul du coût sur n arêtes max                 |
-| Comparaison, probabilité, acceptation | O(1)         | Simple calcul et tirage                             |
-| Mise à jour de T                      | O(1)         | Produit scalaire                                    |
-
-💡 Ces étapes sont faites **à chaque itération**, donc on les multiplie par `k`.
+Donc chaque **itération de la boucle interne** coûte **O(n)**
+et chaque **palier de température** coûte :
+**O(|E| + N × n)**
 
 ---
 
-## 🔹 **Complexité totale**
+#### 🔸 Nombre total de paliers (refroidissements) :
 
-\[
-\boxed{
-O(k \times n)
-}
-\]
+La température est multipliée à chaque tour par `α < 1`, donc :
 
-### Où :
+- Nombre de paliers
+  $$
+  k\approx \log_{\alpha} \left(\frac{T_{\text{min}}}{T_{\text{init}}}\right)
+  = \frac{\log(T_{\text{min}} / T_{\text{init}})}{\log(\alpha)} = \frac{\log(T_{\text{init}} / T_{\text{min}})}{-\log(\alpha)}
+  $$
 
-- `n` est le nombre de sommets,
-- `k` est le nombre d'itérations de l'algorithme (lié à la température et au facteur de refroidissement).
+Pour simplifier, on peut juste dire que le nombre de paliers est **logarithmique** en fonction du ratio entre `T_init` et `T_min` :
+→ **k = O(log(T_init / T_min))**
 
 ---
 
-## ✅ **Interprétation**
+### 🔸 Complexité globale :
 
-- Le recuit simulé est **linéaire par itération**, et le nombre d’itérations est **logarithmique dans l’évolution de température**, ou fixé à une **valeur maximale** pour des raisons pratiques.
-- Pour `n = 100` villes et `k = 10 000` itérations : l'algorithme reste **praticable sur une machine classique**.
+L’algorithme effectue `k` paliers, et à chaque palier on fait :
+
+$$
+\text{Coût} = \mathcal{O}(|E| + N \cdot n)
+$$
+
+Donc la complexité globale est :
+
+$$
+\mathcal{O}(k \cdot (|E| + N \cdot n))
+$$
+
+En remplaçant `k` :
+
+$$
+\mathcal{O}\left(\log\left(\frac{T_{\text{init}}}{T_{\text{min}}}\right) \cdot (|E| + N \cdot n)\right)
+$$
+
+---
+
+### ✅ Conclusion simplifiée :
+
+- **|E|** : dépend de la densité du graphe (souvent **O(n²)** dans un graphe complet),
+- **N** : fixé (paramètre de l’algorithme, typiquement 100 à 1000),
+- Le terme **log(T_init / T_min)** reste modéré (quelques dizaines),
+- Donc :
+  👉 Pour un graphe dense, **complexité ≈ O(n²)**
+  👉 Pour un graphe clairsemé, **complexité ≈ O(n)**
 
 ---
