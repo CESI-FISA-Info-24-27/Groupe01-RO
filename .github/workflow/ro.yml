@@ -1,0 +1,33 @@
+name: Deploy Livrable to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Livrable to GitHub Pages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for deploying to GitHub Pages
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Copy Livrable files to a temporary directory
+      - name: Prepare Livrable files
+        run: |
+          mkdir -p public
+          cp Livrables/Livrable\ 1/Livrable1.md public/index.md
+          cp Livrables/Livrable\ 1/Livrable1.html public/
+
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: public
