@@ -26,6 +26,10 @@ jobs:
           cp "Livrables/Livrable_1/Livrable1.md" public/
           cp "Livrables/Livrable_1/complexite_spaciale.png" public/
 
+      # Debug: List files in the public directory
+      - name: List files in public directory
+        run: ls -R public
+
       # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
