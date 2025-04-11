@@ -22,8 +22,8 @@ jobs:
       - name: Prepare Livrable files
         run: |
           mkdir -p public
-          cp Livrables/Livrable\ 1/Livrable1.md public/index.md
-          cp Livrables/Livrable\ 1/Livrable1.html public/
+          cp Livrables/Livrable\ 1/Livrable1.html public/index.html
+          cp Livrables/Livrable\ 1/Livrable1.md public/
 
       # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
