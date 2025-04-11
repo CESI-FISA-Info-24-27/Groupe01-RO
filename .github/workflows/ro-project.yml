@@ -18,12 +18,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Copy Livrable files to a temporary directory
+      # Copy Livrable files and assets to a temporary directory
       - name: Prepare Livrable files
         run: |
           mkdir -p public
           cp "Livrables/Livrable_1/Livrable1.html" public/index.html
           cp "Livrables/Livrable_1/Livrable1.md" public/
+          cp "Livrables/Livrable_1/complexite_spaciale.png" public/
 
       # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
