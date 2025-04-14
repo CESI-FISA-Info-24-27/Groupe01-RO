@@ -185,8 +185,6 @@ Début :
 Retourner best_tour
 ```
 
-Parfait ! Voici une version améliorée de ton explication, intégrant l'exemple visuel du GIF et en adaptant l’explication du **recuit simulé** à ton contexte avec les **contraintes dynamiques** (routes bloquées, coût variable, etc.).
-
 ---
 
 ### 6. Explication de l’algorithme (avec un exemple visuel)
