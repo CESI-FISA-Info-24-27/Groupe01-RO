@@ -1,5 +1,6 @@
 import random
 import osmnx as ox
+from tqdm import tqdm
 
 def generate_random_graph(graph, num_vertices, density, weight_range=(1, 10)):
     """
@@ -51,29 +52,35 @@ def generate_random_graph(graph, num_vertices, density, weight_range=(1, 10)):
                 graph.add_edge(u, v, weight)
                 existing_edges.add(edge)
 
-def load_graph_from_osm(graph, place_name):
+
+def load_graph_from_osm(graph, place_name, is_country=False):
     """
-    Loads a road network graph from OpenStreetMap (OSM) for a specified location and adds it to the provided graph.
-    This function downloads the road network for the given place name, filters it to include only major roads,
-    and converts it into an adjacency list representation with renamed vertices. The edge weights are based on
-    the road lengths in kilometers.
-    Args:
-        graph (Graph): The graph object where the OSM road network will be added. It must support the `add_edge` method.
-        place_name (str): The name of the place to download the road network from OSM.
-    Returns:
-        None
+    Télécharge un graphe routier depuis OpenStreetMap et conserve uniquement les axes principaux.
+
+    :param graph: Instance de la classe Graph.
+    :param place_name: Nom de la ville ou du pays (ex. "Paris, France").
+    :param is_country: Booléen indiquant si le lieu est un pays. Si True, conserve uniquement les autoroutes et routes principales.
     """
-    # Download the road network graph with a filter for major roads
-    custom_filter = (
-        '["highway"~"motorway|trunk|primary|secondary|tertiary|motorway_link|trunk_link|primary_link|secondary_link"]'
-    )
+    
+    if is_country:
+        # Filtre pour les autoroutes et routes principales (motorway, trunk)
+        custom_filter = '["highway"~"motorway|motorway_link|trunk|trunk_link"]'
+    else:
+        # Filtre pour les axes principaux (inclut les routes secondaires et tertiaires)
+        custom_filter = (
+            '["highway"~"motorway|trunk|primary|secondary|tertiary|motorway_link|trunk_link|primary_link|secondary_link"]'
+        )
+
+    # Télécharger le graphe routier avec le filtre approprié
+    print(f"Téléchargement du graphe pour {place_name}...")
     osm_graph = ox.graph_from_place(place_name, network_type='drive', custom_filter=custom_filter)
 
-    # Create a mapping between OSM node IDs and sequential integers
+    # Créer un mapping entre les identifiants OSM et des entiers croissants
     node_mapping = {node: idx for idx, node in enumerate(sorted(osm_graph.nodes))}
 
-    # Convert the OSM graph to an adjacency list with renamed vertices
-    for u, v, data in osm_graph.edges(data=True):
-        # Use the edge length in kilometers as the weight
-        weight = round(data.get('length', 1) / 1000, 3)  # Convert from meters to kilometers and round to 3 decimal places
+    # Convertir le graphe OSM en liste d'adjacence avec des sommets renommés
+    print("Conversion du graphe en liste d'adjacence...")
+    for u, v, data in tqdm(osm_graph.edges(data=True), desc="Traitement des arêtes", unit="arête"):
+        # Utiliser la longueur de l'arête en kilomètres comme poids
+        weight = round(data.get('length', 1) / 1000, 3)  # Convertir de mètres à kilomètres et limiter à 3 chiffres après la virgule
         graph.add_edge(node_mapping[u], node_mapping[v], weight)

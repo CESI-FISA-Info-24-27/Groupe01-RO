@@ -1,6 +1,8 @@
 from collections import defaultdict
 import networkx as nx
 import matplotlib.pyplot as plt
+import geopandas as gpd
+import osmnx as ox
 
 class Graph:
     """
@@ -151,4 +153,61 @@ class Graph:
 
         nx.draw(g, pos, with_labels=True, node_color='lightblue', node_size=500, font_size=10)
         nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels)
+        plt.show()
+    
+    def draw_country_graph(self, place_name):
+        """
+        Affiche les frontières du pays et positionne les sommets (villes) à leurs positions géographiques.
+
+        :param place_name: Nom du pays (ex. "France").
+        """
+        # Télécharger les frontières du pays
+        country_boundary = ox.geocode_to_gdf(place_name)
+
+        # Créer un graphe NetworkX pour visualiser les sommets
+        g = nx.Graph()
+
+        # Positions géographiques des sommets
+        positions = {}
+
+        for u in self.adjacency_list:
+            for v, weight in self.adjacency_list[u]:
+                g.add_edge(u, v, weight=weight)
+
+                # Ajouter les positions géographiques des sommets
+                if u not in positions:
+                    positions[u] = ox.geocode(u)  # Obtenir les coordonnées géographiques du sommet
+                if v not in positions:
+                    positions[v] = ox.geocode(v)
+
+        # Convertir les positions en un format utilisable par NetworkX
+        pos = {node: (coord[1], coord[0]) for node, coord in positions.items()}  # (longitude, latitude)
+
+        # Tracer les frontières du pays
+        fig, ax = plt.subplots(figsize=(10, 10))
+        country_boundary.plot(ax=ax, edgecolor='black', facecolor='none')
+
+        # Ajouter les sommets et les arêtes au tracé
+        nx.draw_networkx_nodes(g, pos, node_size=50, node_color='red', ax=ax)
+        nx.draw_networkx_edges(g, pos, edge_color='blue', ax=ax)
+
+        # Ajouter un titre
+        plt.title(f"Graphe pour {place_name}")
+        plt.show()
+        
+    def draw_country_contours(place_name):
+        """
+        Affiche les contours d'un pays en utilisant les données OpenStreetMap.
+
+        :param place_name: Nom du pays ou de la région (ex. "France", "Réunion").
+        """
+        # Télécharger les frontières du pays
+        country_boundary = ox.geocode_to_gdf(place_name)
+
+        # Afficher les contours
+        fig, ax = plt.subplots(figsize=(10, 10))
+        country_boundary.plot(ax=ax, edgecolor='black', facecolor='none')
+
+        # Ajouter un titre
+        plt.title(f"Contours de {place_name}")
         plt.show()
