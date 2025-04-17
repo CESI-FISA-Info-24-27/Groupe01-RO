@@ -1,7 +1,6 @@
 from collections import defaultdict
 import networkx as nx
 import matplotlib.pyplot as plt
-from graph_operations import generate_random_graph, load_graph_from_osm
 
 class Graph:
     """
