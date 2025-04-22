@@ -1,94 +1,71 @@
-from collections import defaultdict
 import networkx as nx
 import matplotlib.pyplot as plt
+import pandas as pd
+import random
+from geopy.distance import geodesic
 import geopandas as gpd
-import osmnx as ox
+from shapely.geometry import Point
+from pyproj import Transformer
+import pickle
 
 class Graph:
-    """
-    Graph class represents a weighted undirected graph and provides methods to manipulate and visualize it.
-    Attributes:
-        adjacency_list (defaultdict): A dictionary where keys are nodes and values are lists of tuples representing 
-            neighbors and their respective edge weights.
-        tsp_paths (dict): A dictionary to store Traveling Salesman Problem (TSP) paths for different vehicles.
-    Methods:
-        __init__():
-            Initializes an empty graph with an adjacency list and a dictionary for TSP paths.
-        add_edge(u, v, weight):
-            Adds an undirected edge between nodes `u` and `v` with the specified `weight`.
-        get_edge_weight(u, v):
-            Retrieves the weight of the edge between nodes `u` and `v`. Returns 0 if no edge exists.
-        get_neighbors(u):
-            Returns a list of neighbors and their respective edge weights for the given node `u`.
-        set_tsp_path(vehicle_id, path):
-            Stores the TSP path for a specific vehicle identified by `vehicle_id`.
-        get_tsp_path(vehicle_id):
-            Retrieves the TSP path for the specified `vehicle_id`. Returns an empty list if no path is found.
-        get_all_tsp_paths():
-            Returns all stored TSP paths as a dictionary.
-        draw_graph():
-            Visualizes the graph using NetworkX and Matplotlib. Nodes are displayed with labels, and edges are labeled 
-            with their weights.
-    """
     def __init__(self):
-        self.adjacency_list = defaultdict(list)
+        """
+        Initializes a new instance of the graph class.
+
+        Attributes:
+            graph (networkx.Graph): An instance of a NetworkX graph used to represent the graph structure.
+            tsp_paths (dict): A dictionary to store paths related to the Traveling Salesman Problem (TSP).
+        """
+        self.graph = nx.Graph()
         self.tsp_paths = {}
 
-    def add_edge(self, u, v, weight):
+    def add_edge(self, u, v, weight=1):
         """
-        Adds an edge between two vertices in the graph with a specified weight.
+        Adds an edge between two nodes in the graph with an optional weight.
 
         Parameters:
-            u (hashable): The starting vertex of the edge.
-            v (hashable): The ending vertex of the edge.
-            weight (float): The weight or cost associated with the edge.
+            u (hashable): The starting node of the edge.
+            v (hashable): The ending node of the edge.
+            weight (int, optional): The weight of the edge. Defaults to 1.
 
-        Modifies:
-            Updates the adjacency list to include the edge from `u` to `v` and 
-            from `v` to `u` with the given weight.
-
-        Example:
-            graph.add_edge('A', 'B', 3.5)
+        Returns:
+            None
         """
-        self.adjacency_list[u].append((v, weight))
-        self.adjacency_list[v].append((u, weight))
+        self.graph.add_edge(u, v, weight=weight)
 
     def get_edge_weight(self, u, v):
         """
-        Retrieves the weight of the edge between two vertices in the graph.
+        Retrieve the weight of an edge between two nodes in the graph.
 
         Args:
-            u (hashable): The starting vertex of the edge.
-            v (hashable): The ending vertex of the edge.
+            u (hashable): The starting node of the edge.
+            v (hashable): The ending node of the edge.
 
         Returns:
             int or float: The weight of the edge if it exists, otherwise 0.
         """
-        for neighbor, weight in self.adjacency_list[u]:
-            if neighbor == v:
-                return weight
-        return 0
-
+        return self.graph[u][v]['weight'] if self.graph.has_edge(u, v) else 0
+    
     def get_neighbors(self, u):
         """
         Retrieve the neighbors of a given node in the graph.
 
         Args:
-            u (hashable): The node for which to retrieve the neighbors. 
-                          It must be a valid key in the adjacency list.
+            u: The node for which to find the neighbors.
 
         Returns:
-            list: A list of nodes that are neighbors of the given node `u`.
+            list: A list of neighboring nodes connected to the given node.
         """
-        return self.adjacency_list[u]
+        return list(self.graph.neighbors(u))
 
     def set_tsp_path(self, vehicle_id, path):
         """
-        Sets the Traveling Salesperson Problem (TSP) path for a specific vehicle.
+        Sets the Traveling Salesman Problem (TSP) path for a specific vehicle.
 
         Args:
-            vehicle_id (int): The identifier of the vehicle for which the TSP path is being set.
-            path (list): A list representing the TSP path, where each element is a node in the path.
+            vehicle_id (int): The identifier of the vehicle.
+            path (list): The TSP path represented as a list of nodes or waypoints.
 
         Returns:
             None
@@ -117,97 +94,263 @@ class Graph:
         """
         return self.tsp_paths
     
-    def draw_graph(self):
+    def save(self, filepath):
         """
-        Draws the graph represented by the adjacency list of the current object.
-        This method uses the NetworkX library to create a visual representation of the graph.
-        Each node and edge is displayed, with edges labeled by their weights.
-        The graph is laid out using the spring layout algorithm, which positions nodes
-        to minimize edge crossings and create a visually appealing structure.
-        Steps:
-        - Creates a NetworkX graph from the adjacency list.
-        - Adds edges with weights to the graph.
-        - Computes positions for nodes using the spring layout.
-        - Draws the graph with labeled nodes and edges.
-        - Displays the graph using Matplotlib.
-        Note:
-            - The adjacency list should be a dictionary where keys are nodes and values
-              are lists of tuples (neighbor, weight).
-            - Requires the `networkx` and `matplotlib` libraries.
+        Serializes the current graph object and saves it to the specified file.
+
+        Args:
+            filepath (str): The path to the file where the graph object will be saved.
+
+        Raises:
+            IOError: If there is an issue writing to the specified file.
+
         Example:
-            adjacency_list = {
-                'A': [('B', 3), ('C', 1)],
-                'B': [('A', 3), ('C', 7)],
-                'C': [('A', 1), ('B', 7)]
-            }
-            graph = Graph(adjacency_list)
-            graph.draw_graph()
+            graph.save("graph_data.pkl")
         """
-        g = nx.Graph()
-        for u in self.adjacency_list:
-            for v, weight in self.adjacency_list[u]:
-                g.add_edge(u, v, weight=weight)
+        with open(filepath, 'wb') as f:
+            pickle.dump(self, f)
+        print(f"Graph serialized and saved to {filepath}")
 
-        pos = nx.spring_layout(g)  # Positionnement des nœuds
-        edge_labels = nx.get_edge_attributes(g, 'weight')
-
-        nx.draw(g, pos, with_labels=True, node_color='lightblue', node_size=500, font_size=10)
-        nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels)
-        plt.show()
-    
-    def draw_country_graph(self, place_name):
+    @staticmethod
+    def load(filepath):
         """
-        Affiche les frontières du pays et positionne les sommets (villes) à leurs positions géographiques.
+        Deserializes and loads a graph object from a specified file.
 
-        :param place_name: Nom du pays (ex. "France").
+        Args:
+            filepath (str): The path to the file containing the serialized graph object.
+
+        Returns:
+            object: The deserialized graph object.
+
+        Raises:
+            FileNotFoundError: If the specified file does not exist.
+            IOError: If there is an error reading the file.
+            pickle.UnpicklingError: If the file does not contain a valid serialized object.
+
+        Example:
+            graph = load('/path/to/graph.pkl')
         """
-        # Télécharger les frontières du pays
-        country_boundary = ox.geocode_to_gdf(place_name)
+        with open(filepath, 'rb') as f:
+            graph = pickle.load(f)
+        print(f"Graph deserialized from {filepath}")
+        return graph
 
-        # Créer un graphe NetworkX pour visualiser les sommets
-        g = nx.Graph()
-
-        # Positions géographiques des sommets
-        positions = {}
-
-        for u in self.adjacency_list:
-            for v, weight in self.adjacency_list[u]:
-                g.add_edge(u, v, weight=weight)
-
-                # Ajouter les positions géographiques des sommets
-                if u not in positions:
-                    positions[u] = ox.geocode(u)  # Obtenir les coordonnées géographiques du sommet
-                if v not in positions:
-                    positions[v] = ox.geocode(v)
-
-        # Convertir les positions en un format utilisable par NetworkX
-        pos = {node: (coord[1], coord[0]) for node, coord in positions.items()}  # (longitude, latitude)
-
-        # Tracer les frontières du pays
+    def save_graph_svg(self, path, shapefile_path=None, with_weights=True, path_highlight=None, max_labels=250):
+        """
+        Save the graph as an SVG file with optional geographic context and visual enhancements.
+        Parameters:
+            path (str): The file path where the SVG will be saved.
+            shapefile_path (str, optional): Path to a shapefile for geographic context (e.g., France map).
+                                             If provided, the graph will be overlaid on the map.
+            with_weights (bool, optional): Whether to display edge weights on the graph. Defaults to True.
+            path_highlight (list, optional): A list of nodes representing a path to highlight (e.g., TSP solution).
+                                             The edges in this path will be highlighted in red.
+            max_labels (int, optional): The maximum number of nodes for which labels and weights will be displayed.
+                                        If the number of nodes exceeds this value, labels and weights are omitted.
+                                        Defaults to 250.
+        Notes:
+            - If `shapefile_path` is provided, the graph's node positions are reprojected to match the shapefile's
+              Mercator projection (EPSG:3857).
+            - The geographic boundaries of France are manually set when a shapefile is used.
+            - If the number of nodes exceeds `max_labels`, a message is printed, and labels/weights are not displayed.
+        Output:
+            - Saves the graph visualization as an SVG file at the specified `path`.
+        """
         fig, ax = plt.subplots(figsize=(10, 10))
-        country_boundary.plot(ax=ax, edgecolor='black', facecolor='none')
 
-        # Ajouter les sommets et les arêtes au tracé
-        nx.draw_networkx_nodes(g, pos, node_size=50, node_color='red', ax=ax)
-        nx.draw_networkx_edges(g, pos, edge_color='blue', ax=ax)
+        if shapefile_path:
+            # Load France shapefile
+            france = gpd.read_file(shapefile_path)
 
-        # Ajouter un titre
-        plt.title(f"Graphe pour {place_name}")
-        plt.show()
-        
-    def draw_country_contours(place_name):
+            # Reproject to Mercator projection (web standard)
+            france = france.to_crs(epsg=3857)
+
+            # Create a GeoDataFrame for graph positions
+            nodes = []
+            for name, (lon, lat) in self.positions.items():
+                nodes.append({'city': name, 'geometry': Point(lon, lat)})
+            gdf_nodes = gpd.GeoDataFrame(nodes, crs="EPSG:4326")  # WGS84
+            gdf_nodes = gdf_nodes.to_crs(epsg=3857)
+
+            # Create a dictionary of new reprojected positions
+            new_positions = {row['city']: (row.geometry.x, row.geometry.y) for _, row in gdf_nodes.iterrows()}
+
+            # Plot France
+            france.plot(ax=ax, color='whitesmoke', edgecolor='black')
+
+            # Manually set the geographic boundaries of France
+            transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
+            minx, miny = transformer.transform(-5.14, 41.33)  # Southwest of France
+            maxx, maxy = transformer.transform(9.56, 51.09)   # Northeast of France
+
+            ax.set_xlim(minx, maxx)
+            ax.set_ylim(miny, maxy)
+        else:
+            new_positions = self.positions  # If no background, use raw positions
+
+        # Draw edges with reduced thickness
+        nx.draw_networkx_edges(self.graph, new_positions, edge_color='gray', ax=ax, width=0.5)
+
+        # Draw nodes
+        nx.draw_networkx_nodes(self.graph, new_positions, node_color='orange', node_size=25, ax=ax)
+
+        # Display node labels and edge weights only if the number of cities is less than or equal to max_labels
+        if len(self.graph.nodes) <= max_labels:
+            # Draw node labels
+            nx.draw_networkx_labels(self.graph, new_positions, font_size=4, ax=ax)
+
+            # Draw edge weights
+            if with_weights:
+                edge_labels = nx.get_edge_attributes(self.graph, 'weight')
+                nx.draw_networkx_edge_labels(self.graph, new_positions, edge_labels=edge_labels, font_size=3, ax=ax)
+        else:
+            print(f"The number of cities ({len(self.graph.nodes)}) exceeds {max_labels}. Labels and weights will not be displayed.")
+
+        # Highlight a path (e.g., TSP)
+        if path_highlight:
+            edges = list(zip(path_highlight, path_highlight[1:]))
+            nx.draw_networkx_edges(self.graph, new_positions, edgelist=edges, edge_color='red', width=2, ax=ax)
+
+        plt.axis('off')
+        plt.tight_layout()
+        plt.savefig(path, format='svg', bbox_inches='tight')
+        plt.clf()
+
+    def haversine_distance(coord1, coord2):
         """
-        Affiche les contours d'un pays en utilisant les données OpenStreetMap.
+        Calculate the Haversine distance between two geographical coordinates.
 
-        :param place_name: Nom du pays ou de la région (ex. "France", "Réunion").
+        The Haversine formula determines the great-circle distance between two points
+        on a sphere given their latitude and longitude. This implementation uses the
+        `geodesic` function from the `geopy` library to compute the distance in kilometers.
+
+        Args:
+            coord1 (tuple): A tuple representing the latitude and longitude of the first point (e.g., (lat1, lon1)).
+            coord2 (tuple): A tuple representing the latitude and longitude of the second point (e.g., (lat2, lon2)).
+
+        Returns:
+            float: The distance between the two coordinates in kilometers.
         """
-        # Télécharger les frontières du pays
-        country_boundary = ox.geocode_to_gdf(place_name)
+        return geodesic(coord1, coord2).kilometers
 
-        # Afficher les contours
-        fig, ax = plt.subplots(figsize=(10, 10))
-        country_boundary.plot(ax=ax, edgecolor='black', facecolor='none')
+    def generate_geo_graph(self, geonames_path, n, density=0.1):
+        """
+        Generates a geographical graph based on a list of cities with their coordinates.
+        This method reads a file containing geographical data, filters for populated places,
+        selects a specified number of cities randomly, and creates a graph where nodes
+        represent cities and edges represent geographical connections. The graph is 
+        initialized as connected using a minimal spanning tree (MST) and additional edges 
+        are added based on the specified density.
+        Args:
+            geonames_path (str): Path to the geonames file containing city data.
+            n (int): Number of cities to include in the graph.
+            density (float, optional): The density of the graph, determining the proportion 
+                of possible edges to include. Defaults to 0.1.
+        Raises:
+            ValueError: If the file contains fewer valid cities than the requested number `n`.
+        Attributes:
+            graph (networkx.Graph): The generated graph with cities as nodes.
+            positions (dict): A dictionary mapping city names to their geographical 
+                coordinates (longitude, latitude).
+        Notes:
+            - The geonames file is expected to be a tab-separated file with specific columns.
+            - Only cities with valid latitude and longitude values are considered.
+            - The graph is initialized with a minimal spanning tree to ensure connectivity.
+            - Additional edges are added randomly to achieve the desired density.
+        """
+        df = pd.read_csv(
+            geonames_path, 
+            sep='\t', 
+            header=None,
+            names=["geonameid", "name", "asciiname", "alternatenames", "latitude", "longitude", 
+                "feature_class", "feature_code", "country_code", "cc2", "admin1_code", 
+                "admin2_code", "admin3_code", "admin4_code", "population", "elevation", 
+                "dem", "timezone", "modification_date"]
+        )
 
-        # Ajouter un titre
-        plt.title(f"Contours de {place_name}")
+        # Filter cities with valid coordinates
+        df = df[df['feature_class'] == 'P']  # P = populated place
+        df = df.dropna(subset=['latitude', 'longitude'])
+
+        # Check if the file contains enough cities
+        if len(df) < n:
+            raise ValueError(f"The file contains only {len(df)} valid cities, but {n} are requested.")
+
+        # Select n random cities
+        df_sample = df.sample(n=n, random_state=42).reset_index(drop=True)
+        self.graph = nx.Graph()
+        self.positions = {}
+
+        # Add nodes to the graph
+        for idx, row in df_sample.iterrows():
+            city = row['name']
+            lat = row['latitude']
+            lon = row['longitude']
+            self.graph.add_node(city, pos=(lon, lat))  # Note: x = lon, y = lat
+            self.positions[city] = (lon, lat)
+
+        # Generate a minimal edge to make the graph connected (MST)
+        cities = list(self.graph.nodes)
+        if len(cities) > 1:  # Ensure there are at least 2 cities
+            for i in range(len(cities) - 1):
+                city1, city2 = cities[i], cities[i + 1]
+                self._add_edge_with_geo_weight(city1, city2)
+
+        # Add additional edges based on density
+        max_edges = int(len(cities) * (len(cities) - 1) / 2 * density)
+        added = set(self.graph.edges)
+        while len(self.graph.edges) < max_edges:
+            u, v = random.sample(cities, 2)
+            if (u, v) not in added and (v, u) not in added:
+                self._add_edge_with_geo_weight(u, v)
+                added.add((u, v))
+
+    def _add_edge_with_geo_weight(self, u, v):
+        """
+        Adds an edge between two nodes in the graph with a weight based on the 
+        geodesic distance between their geographical positions.
+
+        This method calculates the geodesic distance (in kilometers) between the 
+        positions of nodes `u` and `v` using their latitude and longitude 
+        coordinates. The calculated distance is rounded to two decimal places 
+        and set as the weight of the edge.
+
+        Args:
+            u (hashable): The identifier of the first node.
+            v (hashable): The identifier of the second node.
+
+        Raises:
+            KeyError: If either node `u` or `v` does not exist in the graph or 
+                      if their 'pos' attribute is missing.
+        """
+        from geopy.distance import geodesic
+        pos_u = self.graph.nodes[u]['pos']
+        pos_v = self.graph.nodes[v]['pos']
+        weight = geodesic((pos_u[1], pos_u[0]), (pos_v[1], pos_v[0])).kilometers
+        self.graph.add_edge(u, v, weight=round(weight, 2))
+
+    def plot_geo_graph(self, map_background=True):
+        """
+        Plots a geographic graph with optional map background.
+        This method visualizes the graph using geographic positions for nodes.
+        Optionally, it can display a map of France as the background.
+        Parameters:
+            map_background (bool): If True, displays a map of France as the background.
+                                   Defaults to True.
+        Returns:
+            None
+        """
+        plt.figure(figsize=(10, 10))
+        ax = plt.gca()
+
+        # Optional: load the map of France as background
+        if map_background:
+            world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+            france = world[world.name == "France"]
+            france.plot(ax=ax, color='lightgrey')
+
+        # Draw edges and nodes with geographic positions
+        nx.draw(self.graph, self.positions, with_labels=True, node_color='orange', edge_color='gray', ax=ax)
+
+        plt.title("Geographic graph on map background")
         plt.show()
