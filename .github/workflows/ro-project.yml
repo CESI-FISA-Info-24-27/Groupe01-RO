@@ -1,4 +1,4 @@
-name: Deploy Livrable to GitHub Pages
+name: Deploy Documentation to GitHub Pages
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Livrable to GitHub Pages
+    name: Deploy Documentation to GitHub Pages
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required for deploying to GitHub Pages
@@ -18,21 +18,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Copy Livrable files and assets to a temporary directory
-      - name: Prepare Livrable files
-        run: |
-          mkdir -p public
-          cp "Livrables/Livrable_1/Livrable1.html" public/index.html
-          cp "Livrables/Livrable_1/Livrable1.md" public/
-          cp "Livrables/Livrable_1/complexite_spaciale.png" public/
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-      # Debug: List files in the public directory
-      - name: List files in public directory
-        run: ls -R public
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install sphinx sphinx-rtd-theme
+
+      # Build the Sphinx documentation
+      - name: Build Sphinx documentation
+        run: |
+          cd docs
+          make html
 
       # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: public
+          publish_dir: docs/build/html
