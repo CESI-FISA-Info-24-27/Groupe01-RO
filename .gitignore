@@ -136,6 +136,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+/source/_build
+/source/static
+/source/_templates
 
 # Spyder project settings
 .spyderproject
