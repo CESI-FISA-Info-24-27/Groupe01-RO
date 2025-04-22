@@ -39,25 +39,58 @@ jobs:
       # Prepare Livrable files
       - name: Prepare Livrable files
         run: |
-          mkdir -p public
-          cp "Livrables/Livrable_1/Livrable1.html" public/index.html
-          cp "Livrables/Livrable_1/Livrable1.md" public/
-          cp "Livrables/Livrable_1/complexite_spaciale.png" public/
+          mkdir -p livrable
+          cp "Livrables/Livrable_1/Livrable1.html" livrable/index.html
+          cp "Livrables/Livrable_1/Livrable1.md" livrable/
+          cp "Livrables/Livrable_1/complexite_spaciale.png" livrable/
 
-      # Combine Documentation and Livrable
-      - name: Combine Documentation and Livrable
+      # Prepare Documentation files
+      - name: Prepare Documentation files
         run: |
-          mkdir -p combined
-          cp -r source/_build/html/* combined/
-          cp -r public/* combined/
+          mkdir -p documentation
+          cp -r source/_build/html/* documentation/
 
-      # Debug: List files in the combined directory
-      - name: List files in combined directory
-        run: ls -R combined
+      # Add intermediate page
+      - name: Add intermediate page
+        run: |
+          echo '<!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Groupe01-RO</title>
+              <style>
+                  body {
+                      font-family: Arial, sans-serif;
+                      text-align: center;
+                      margin-top: 50px;
+                  }
+                  a {
+                      display: inline-block;
+                      margin: 20px;
+                      padding: 15px 30px;
+                      font-size: 18px;
+                      text-decoration: none;
+                      color: white;
+                      background-color: #007BFF;
+                      border-radius: 5px;
+                  }
+                  a:hover {
+                      background-color: #0056b3;
+                  }
+              </style>
+          </head>
+          <body>
+              <h1>Bienvenue sur le projet Groupe01-RO</h1>
+              <p>Choisissez où vous voulez aller :</p>
+              <a href="./documentation/index.html">Documentation</a>
+              <a href="./livrable/index.html">Livrable</a>
+          </body>
+          </html>' > index.html
 
       # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: combined
+          publish_dir: .
