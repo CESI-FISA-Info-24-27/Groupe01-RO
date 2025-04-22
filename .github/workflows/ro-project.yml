@@ -1,4 +1,4 @@
-name: Deploy Documentation to GitHub Pages
+name: Deploy Documentation and Livrable to GitHub Pages
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Documentation to GitHub Pages
+    name: Deploy Documentation and Livrable to GitHub Pages
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required for deploying to GitHub Pages
@@ -18,13 +18,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up Python environment
+      # Set up Python environment for Sphinx
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # Install dependencies
+      # Install dependencies for Sphinx
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -36,9 +36,28 @@ jobs:
         run: |
           sphinx-build -b html source source/_build/html
 
+      # Prepare Livrable files
+      - name: Prepare Livrable files
+        run: |
+          mkdir -p public
+          cp "Livrables/Livrable_1/Livrable1.html" public/index.html
+          cp "Livrables/Livrable_1/Livrable1.md" public/
+          cp "Livrables/Livrable_1/complexite_spaciale.png" public/
+
+      # Combine Documentation and Livrable
+      - name: Combine Documentation and Livrable
+        run: |
+          mkdir -p combined
+          cp -r source/_build/html/* combined/
+          cp -r public/* combined/
+
+      # Debug: List files in the combined directory
+      - name: List files in combined directory
+        run: ls -R combined
+
       # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: source/_build/html
+          publish_dir: combined
