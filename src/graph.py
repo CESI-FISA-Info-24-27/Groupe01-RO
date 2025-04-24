@@ -7,6 +7,15 @@ import geopandas as gpd
 from shapely.geometry import Point
 from pyproj import Transformer
 import pickle
+import os
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement
+load_dotenv()
+
+# Récupérer les chemins depuis le fichier .env
+geonames_path = os.getenv("GEONAMES_PATH")
+shapefile_path = os.getenv("SHAPEFILE_PATH")
 
 class Graph:
     def __init__(self):
@@ -19,6 +28,25 @@ class Graph:
         """
         self.graph = nx.Graph()
         self.tsp_paths = {}
+        
+    def get_infos(self):
+        """
+        Returns detailed information about the graph.
+
+        Returns:
+            dict: A dictionary containing various properties of the graph.
+        """
+        infos = {
+            "number_of_nodes": self.graph.number_of_nodes(),
+            "number_of_edges": self.graph.number_of_edges(),
+            "average_degree": sum(dict(self.graph.degree()).values()) / self.graph.number_of_nodes(),
+            "density": nx.density(self.graph),
+            "is_connected": nx.is_connected(self.graph) if nx.is_connected(self.graph) else False,
+            "number_of_connected_components": nx.number_connected_components(self.graph),
+            "average_clustering_coefficient": nx.average_clustering(self.graph),
+        }
+
+        return infos
 
     def add_edge(self, u, v, weight=1):
         """
@@ -135,7 +163,7 @@ class Graph:
         print(f"Graph deserialized from {filepath}")
         return graph
 
-    def save_graph_svg(self, path, shapefile_path=None, with_weights=True, path_highlight=None, max_labels=250):
+    def save_graph_svg(self, path, with_weights=True, path_highlight=None, max_labels=250):
         """
         Save the graph as an SVG file with optional geographic context and visual enhancements.
         Parameters:
@@ -233,7 +261,7 @@ class Graph:
         """
         return geodesic(coord1, coord2).kilometers
 
-    def generate_geo_graph(self, geonames_path, n, density=0.1):
+    def generate_geo_graph(self, n, density=0.1):
         """
         Generates a geographical graph based on a list of cities with their coordinates.
         This method reads a file containing geographical data, filters for populated places,
