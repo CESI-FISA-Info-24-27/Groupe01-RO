@@ -163,81 +163,72 @@ class Graph:
         print(f"Graph deserialized from {filepath}")
         return graph
 
-    def save_graph_svg(self, path, with_weights=True, path_highlight=None, max_labels=250):
+    def save_graph_svg(self, path, with_weights=True, vehicle_paths=None, max_labels=250):
         """
         Save the graph as an SVG file with optional geographic context and visual enhancements.
+
         Parameters:
             path (str): The file path where the SVG will be saved.
-            shapefile_path (str, optional): Path to a shapefile for geographic context (e.g., France map).
-                                             If provided, the graph will be overlaid on the map.
             with_weights (bool, optional): Whether to display edge weights on the graph. Defaults to True.
-            path_highlight (list, optional): A list of nodes representing a path to highlight (e.g., TSP solution).
-                                             The edges in this path will be highlighted in red.
+            vehicle_paths (dict, optional): A dictionary where keys are vehicle IDs and values are lists of nodes
+                                            representing the paths of the vehicles. These paths will be highlighted.
             max_labels (int, optional): The maximum number of nodes for which labels and weights will be displayed.
-                                        If the number of nodes exceeds this value, labels and weights are omitted.
                                         Defaults to 250.
-        Notes:
-            - If `shapefile_path` is provided, the graph's node positions are reprojected to match the shapefile's
-              Mercator projection (EPSG:3857).
-            - The geographic boundaries of France are manually set when a shapefile is used.
-            - If the number of nodes exceeds `max_labels`, a message is printed, and labels/weights are not displayed.
+
         Output:
             - Saves the graph visualization as an SVG file at the specified `path`.
         """
         fig, ax = plt.subplots(figsize=(10, 10))
 
-        if shapefile_path:
-            # Load France shapefile
-            france = gpd.read_file(shapefile_path)
-
-            # Reproject to Mercator projection (web standard)
+        # Load France shapefile if available
+        if "./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp":
+            france = gpd.read_file("./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp")
             france = france.to_crs(epsg=3857)
 
-            # Create a GeoDataFrame for graph positions
-            nodes = []
-            for name, (lon, lat) in self.positions.items():
-                nodes.append({'city': name, 'geometry': Point(lon, lat)})
-            gdf_nodes = gpd.GeoDataFrame(nodes, crs="EPSG:4326")  # WGS84
-            gdf_nodes = gdf_nodes.to_crs(epsg=3857)
-
-            # Create a dictionary of new reprojected positions
+            # Reproject node positions
+            nodes = [{'city': name, 'geometry': Point(lon, lat)} for name, (lon, lat) in self.positions.items()]
+            gdf_nodes = gpd.GeoDataFrame(nodes, crs="EPSG:4326").to_crs(epsg=3857)
             new_positions = {row['city']: (row.geometry.x, row.geometry.y) for _, row in gdf_nodes.iterrows()}
 
             # Plot France
             france.plot(ax=ax, color='whitesmoke', edgecolor='black')
 
-            # Manually set the geographic boundaries of France
+            # Set geographic boundaries
             transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
-            minx, miny = transformer.transform(-5.14, 41.33)  # Southwest of France
-            maxx, maxy = transformer.transform(9.56, 51.09)   # Northeast of France
-
+            minx, miny = transformer.transform(-5.14, 41.33)
+            maxx, maxy = transformer.transform(9.56, 51.09)
             ax.set_xlim(minx, maxx)
             ax.set_ylim(miny, maxy)
         else:
-            new_positions = self.positions  # If no background, use raw positions
+            new_positions = self.positions
 
-        # Draw edges with reduced thickness
+        # Draw all edges in gray
         nx.draw_networkx_edges(self.graph, new_positions, edge_color='gray', ax=ax, width=0.5)
 
-        # Draw nodes
+        # Draw all nodes
         nx.draw_networkx_nodes(self.graph, new_positions, node_color='orange', node_size=25, ax=ax)
 
-        # Display node labels and edge weights only if the number of cities is less than or equal to max_labels
+        # Display node labels and edge weights if the number of nodes is small enough
         if len(self.graph.nodes) <= max_labels:
-            # Draw node labels
             nx.draw_networkx_labels(self.graph, new_positions, font_size=4, ax=ax)
-
-            # Draw edge weights
             if with_weights:
                 edge_labels = nx.get_edge_attributes(self.graph, 'weight')
                 nx.draw_networkx_edge_labels(self.graph, new_positions, edge_labels=edge_labels, font_size=3, ax=ax)
         else:
             print(f"The number of cities ({len(self.graph.nodes)}) exceeds {max_labels}. Labels and weights will not be displayed.")
 
-        # Highlight a path (e.g., TSP)
-        if path_highlight:
-            edges = list(zip(path_highlight, path_highlight[1:]))
-            nx.draw_networkx_edges(self.graph, new_positions, edgelist=edges, edge_color='red', width=2, ax=ax)
+        # Highlight vehicle paths
+        if vehicle_paths:
+            colors = ['red', 'blue', 'green', 'purple', 'cyan']  # Colors for different vehicles
+            for vehicle_id, path in vehicle_paths.items():
+                print(f"Trajet du véhicule {vehicle_id} : {path}")  # Debug
+                color = colors[vehicle_id % len(colors)]  # Cycle through colors if there are more vehicles than colors
+                edges = list(zip(path, path[1:]))  # Create edges from the path
+                nx.draw_networkx_edges(self.graph, new_positions, edgelist=edges, edge_color=color, width=2, ax=ax)
+
+                # Highlight the starting point of the vehicle
+                start_node = path[0]
+                nx.draw_networkx_nodes(self.graph, new_positions, nodelist=[start_node], node_color=color, node_size=50, ax=ax)
 
         plt.axis('off')
         plt.tight_layout()
@@ -287,7 +278,8 @@ class Graph:
             - Additional edges are added randomly to achieve the desired density.
         """
         df = pd.read_csv(
-            geonames_path, 
+            #geonames_path,
+            "./data/FR/cities_of_france.txt", 
             sep='\t', 
             header=None,
             names=["geonameid", "name", "asciiname", "alternatenames", "latitude", "longitude", 
