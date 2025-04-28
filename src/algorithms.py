@@ -41,6 +41,10 @@ class Algorithms:
 
         temp = initial_temp
 
+        # Init GIF setup
+        # number_iteraton = 0
+        # number_saves = 0
+
         while temp > min_temp:
             for _ in range(max_iterations):
                 # Generate a neighboring solution
@@ -63,6 +67,11 @@ class Algorithms:
                         # Update tsp_paths with the best solution
                         for vehicle_id, path in best_solution.items():
                             graph.set_tsp_path(vehicle_id, path)
+                # Save for GIF
+                # number_iteraton += 1
+                # if number_iteraton%100 == 0:
+                #     current_solution.save_graph_png("./data/results/gif/result_graph_{}.png".format(number_saves))
+                #     number_saves += 1
 
             # Cooling
             temp *= cooling_rate
