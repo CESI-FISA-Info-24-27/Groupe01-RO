@@ -12,55 +12,50 @@ sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 from graph import Graph
 
 
-def test_spatial_complexity():
+def test_spatial_complexity(display = False):
     results = []
-    #tailles = [i for i in range(100, 1000, 100)]
-    tailles = [10000]
-    #densites = [round(i, 1) for i in np.arange(0.1, 1, 0.1)]
-    densites = [0.01, 0.001, 0.0001]
+    tailles = [i for i in range(100, 1000, 100)]
+    densites = [0.001, 0.01, 0.05, 0.1, 0.15, 0.20, 0.25, 0.3]
 
     for n in tailles:
         for d in densites:
             g = Graph()
-            print(f"Generating graph for n verses={n}, density={d}")
+            print(f"Generating graph for n vertices={n}, density={d}")
 
-            start = time()
             tracemalloc.start()
             g.generate_geo_graph(n=n, density=d)
             current, peak = tracemalloc.get_traced_memory()
             tracemalloc.stop()
-            end = time()
 
             results.append({
-                'n': n,
-                'densité': d,
-                'mémoire_utilisée_kB': current / 1024,
-                'pic_mémoire_kB': peak / 1024,
-                'temps_s': round(end - start, 2)
+                'size': n,
+                'density': d,
+                'used_memory_kB': current / 1024,
             })
 
             results_df = pd.DataFrame(results)
 
-    # Créer plusieurs graphiques dans une seule figure
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    # === Affichage console pour CI ===
+    print("\n=== Résultats de la mesure de complexité spatiale ===\n")
+    print(results_df.to_string(index=False))
 
-    # Graphique du temps d'exécution avec ligne et points
-    sns.lineplot(x='n', y='temps_s', hue='densité', palette='viridis', data=results_df, ax=axes[0], marker='o', linewidth=2)
-    axes[0].set_title("Temps de construction des graphes")
-    axes[0].set_xlabel("Taille du graphe (n)")
-    axes[0].set_ylabel("Temps de construction (s)")
-    axes[0].grid(True)
-
-    # Graphique de la mémoire utilisée avec ligne et points
-    sns.lineplot(x='n', y='mémoire_utilisée_kB', hue='densité', palette='viridis', data=results_df, ax=axes[1], marker='o', linewidth=2)
-    axes[1].set_title("Mémoire utilisée")
-    axes[1].set_xlabel("Taille du graphe (n)")
-    axes[1].set_ylabel("Mémoire utilisée (kB)")
-    axes[1].grid(True)
-
-    plt.tight_layout()  # Ajuster les espacements
-    plt.show()
-
+    if(display) :
+        # Create a graph showing memory usage according to graph's size and density evolution
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(
+            data=results_df,
+            x='size',
+            y='used_memory_kB',
+            hue='density',
+            marker='o',
+            palette='viridis'
+        )
+        plt.title("Memory used according to the graph size")
+        plt.xlabel("Number of vertices (n)")
+        plt.ylabel("Memory used (kB)")
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
 
 test_spatial_complexity()
 
