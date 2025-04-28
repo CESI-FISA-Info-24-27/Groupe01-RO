@@ -235,6 +235,80 @@ class Graph:
         plt.savefig(path, format='svg', bbox_inches='tight')
         plt.clf()
 
+    def save_graph_png(self, path, with_weights=True, vehicle_paths=None, max_labels=250):
+        """
+        Save the graph as a PNG file with optional geographic context and visual enhancements.
+
+        Parameters:
+            path (str): The file path where the PNG will be saved.
+            with_weights (bool, optional): Whether to display edge weights on the graph. Defaults to True.
+            vehicle_paths (dict, optional): A dictionary where keys are vehicle IDs and values are lists of nodes
+                                            representing the paths of the vehicles. These paths will be highlighted.
+            max_labels (int, optional): The maximum number of nodes for which labels and weights will be displayed.
+                                        Defaults to 250.
+
+        Output:
+            - Saves the graph visualization as a PNG file at the specified `path`.
+        """
+        fig, ax = plt.subplots(figsize=(10, 10))
+
+        # Load France shapefile if available
+        if "./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp":
+            france = gpd.read_file("./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp")
+            france = france.to_crs(epsg=3857)
+
+            # Reproject node positions
+            nodes = [{'city': name, 'geometry': Point(lon, lat)} for name, (lon, lat) in self.positions.items()]
+            gdf_nodes = gpd.GeoDataFrame(nodes, crs="EPSG:4326").to_crs(epsg=3857)
+            new_positions = {row['city']: (row.geometry.x, row.geometry.y) for _, row in gdf_nodes.iterrows()}
+
+            # Plot France
+            france.plot(ax=ax, color='whitesmoke', edgecolor='black')
+
+            # Set geographic boundaries
+            transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
+            minx, miny = transformer.transform(-5.14, 41.33)
+            maxx, maxy = transformer.transform(9.56, 51.09)
+            ax.set_xlim(minx, maxx)
+            ax.set_ylim(miny, maxy)
+        else:
+            new_positions = self.positions
+
+        # Draw all edges in gray
+        nx.draw_networkx_edges(self.graph, new_positions, edge_color='gray', ax=ax, width=0.5)
+
+        # Draw all nodes
+        nx.draw_networkx_nodes(self.graph, new_positions, node_color='orange', node_size=25, ax=ax)
+
+        # Display node labels and edge weights if the number of nodes is small enough
+        if len(self.graph.nodes) <= max_labels:
+            nx.draw_networkx_labels(self.graph, new_positions, font_size=4, ax=ax)
+            if with_weights:
+                edge_labels = nx.get_edge_attributes(self.graph, 'weight')
+                nx.draw_networkx_edge_labels(self.graph, new_positions, edge_labels=edge_labels, font_size=3, ax=ax)
+        else:
+            print(f"The number of cities ({len(self.graph.nodes)}) exceeds {max_labels}. Labels and weights will not be displayed.")
+
+        # Highlight vehicle paths
+        if vehicle_paths:
+            colors = ['red', 'blue', 'green', 'purple', 'cyan']  # Colors for different vehicles
+            for vehicle_id, path in vehicle_paths.items():
+                print(f"Trajet du véhicule {vehicle_id} : {path}")  # Debug
+                color = colors[vehicle_id % len(colors)]  # Cycle through colors if there are more vehicles than colors
+                edges = list(zip(path, path[1:]))  # Create edges from the path
+                nx.draw_networkx_edges(self.graph, new_positions, edgelist=edges, edge_color=color, width=2, ax=ax)
+
+                # Highlight the starting point of the vehicle
+                start_node = path[0]
+                nx.draw_networkx_nodes(self.graph, new_positions, nodelist=[start_node], node_color=color, node_size=50, ax=ax)
+
+        plt.axis('off')
+        plt.tight_layout()
+        
+        # Augmenter la résolution (dpi) pour un PNG plus net
+        plt.savefig(path, format='png', bbox_inches='tight', dpi=300)
+        plt.close(fig)  # Fermer la figure pour libérer la mémoire
+
     def haversine_distance(coord1, coord2):
         """
         Calculate the Haversine distance between two geographical coordinates.
