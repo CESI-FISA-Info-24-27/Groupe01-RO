@@ -162,6 +162,30 @@ class Graph:
             graph = pickle.load(f)
         print(f"Graph deserialized from {filepath}")
         return graph
+    
+    def calculate_distances(self, vehicle_paths):
+        """
+        Calculate the distance traveled by each vehicle and the total distance.
+
+        Args:
+            vehicle_paths (dict): A dictionary where keys are vehicle IDs and values are lists of nodes representing the paths.
+
+        Returns:
+            tuple: (distances_per_vehicle, total_distance)
+                - distances_per_vehicle (dict): A dictionary with vehicle IDs as keys and their respective distances as values.
+                - total_distance (float): The total distance traveled by all vehicles.
+        """
+        distances_per_vehicle = {}
+        total_distance = 0
+
+        for vehicle_id, path in vehicle_paths.items():
+            distance = 0
+            for i in range(len(path) - 1):
+                distance += self.get_edge_weight(path[i], path[i + 1])
+            distances_per_vehicle[vehicle_id] = distance
+            total_distance += distance
+
+        return distances_per_vehicle, total_distance
 
     def save_graph_svg(self, path, with_weights=True, vehicle_paths=None, max_labels=250):
         """
@@ -181,7 +205,7 @@ class Graph:
         fig, ax = plt.subplots(figsize=(10, 10))
 
         # Load France shapefile if available
-        if "./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp":
+        if os.path.exists("./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp"):
             france = gpd.read_file("./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp")
             france = france.to_crs(epsg=3857)
 
@@ -216,22 +240,46 @@ class Graph:
                 nx.draw_networkx_edge_labels(self.graph, new_positions, edge_labels=edge_labels, font_size=3, ax=ax)
         else:
             print(f"The number of cities ({len(self.graph.nodes)}) exceeds {max_labels}. Labels and weights will not be displayed.")
-
-        # Highlight vehicle paths
+            
+        # Highlight vehicle paths with distinct colors and calculate distances
         if vehicle_paths:
-            colors = ['red', 'blue', 'green', 'purple', 'cyan']  # Colors for different vehicles
-            for vehicle_id, path in vehicle_paths.items():
-                print(f"Trajet du véhicule {vehicle_id} : {path}")  # Debug
+            colors = [
+                'red', 'blue', 'green', 'purple', 'cyan', 'orange', 'pink', 'brown', 
+                'yellow', 'lime', 'magenta', 'teal', 'gold', 'navy', 'maroon', 'olive', 
+                'coral', 'turquoise', 'indigo', 'violet', 'crimson', 'chartreuse', 
+                'darkorange', 'darkgreen', 'darkblue', 'darkred', 'darkcyan', 'darkmagenta'
+            ]  # Add more colors if needed
+
+            distances_per_vehicle, total_distance = self.calculate_distances(vehicle_paths)
+
+            for vehicle_id, path_nodes in vehicle_paths.items():
                 color = colors[vehicle_id % len(colors)]  # Cycle through colors if there are more vehicles than colors
-                edges = list(zip(path, path[1:]))  # Create edges from the path
-                nx.draw_networkx_edges(self.graph, new_positions, edgelist=edges, edge_color=color, width=2, ax=ax)
+                
+                # Filter edges to include only existing edges in the graph
+                edges = [
+                    (path_nodes[i], path_nodes[i + 1])
+                    for i in range(len(path_nodes) - 1)
+                    if self.graph.has_edge(path_nodes[i], path_nodes[i + 1])
+                ]
+                
+                # Draw the valid edges
+                nx.draw_networkx_edges(self.graph, new_positions, edgelist=edges, edge_color=color, width=0.75, ax=ax)
 
                 # Highlight the starting point of the vehicle
-                start_node = path[0]
+                start_node = path_nodes[0]
                 nx.draw_networkx_nodes(self.graph, new_positions, nodelist=[start_node], node_color=color, node_size=50, ax=ax)
+
+                # Display the distance for each vehicle
+                ax.text(0.05, 0.95 - 0.05 * vehicle_id, f"Vehicle {vehicle_id + 1}: {distances_per_vehicle[vehicle_id]:.2f} km",
+                        transform=ax.transAxes, fontsize=8, color=color)
+
+            # Display the total distance
+            ax.text(0.05, 0.05, f"Total Distance: {total_distance:.2f} km", transform=ax.transAxes, fontsize=10, color='black')
 
         plt.axis('off')
         plt.tight_layout()
+
+        # Save the graph to the specified path
         plt.savefig(path, format='svg', bbox_inches='tight')
         plt.clf()
 

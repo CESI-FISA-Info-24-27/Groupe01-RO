@@ -9,6 +9,7 @@ import random
 from graph import Graph
 from algorithms import Algorithms
 from utils import *
+import networkx as nx
 
 # Load environment variables
 load_dotenv()
@@ -25,13 +26,14 @@ def main():
 
     # Graph generation
     graph = Graph()
-    graph.generate_geo_graph(25, 0.1)
-
+    
+    #graph.generate_geo_graph(10000, 0.3)
     graph.save_graph_svg("./data/results/initial_graph.svg")
-    Algorithms.simulated_annealing_multi_vehicle(graph, 1000, 0.1, 0.9, 50, 3)
-    graph.save_graph_svg("./data/results/final_graph.svg", graph.get_all_tsp_paths())
-    # Display vehicle paths
-    print("Vehicle paths: " + str(graph.get_all_tsp_paths()))
+    
+    Algorithms.simulated_annealing(graph, 1000, 0.1, 0.9, 50, 5)
+    
+    #print("Vehicle paths: " + str(graph.get_all_tsp_paths()))
+    graph.save_graph_svg("./data/results/final_graph.svg", True, graph.get_all_tsp_paths())
 
     # Create GIF
     # png_folder = "./data/results/gif" 
