@@ -36,9 +36,9 @@ def shuffle_graph(graph, time = datetime.now().strftime("%H:%M")):
     Changes the graph by modifying the value of edges.
     """
     current_pourcentage = poucentage_regard_to_hour(time)
-    for u, v in graph.edges():
+    for u, v in graph.graph.edges():
         if random.random() <= current_pourcentage:
-            graph[v][u]['weight'] = round(graph[u][v]['weight']*random_biased_low(), 2)
+            graph.graph[v][u]['weight'] = round(graph.graph[u][v]['weight']*random_biased_low(), 2)
         elif random.random() < 0.01:
-            graph[u][v]['weight'] = -1
+            graph.graph[u][v]['weight'] = -1
     return graph
