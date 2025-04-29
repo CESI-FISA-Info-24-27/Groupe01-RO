@@ -9,7 +9,7 @@ import seaborn as sns
 
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
-from graph import Graph
+from src.graph import Graph
 
 
 def test_spatial_complexity():
