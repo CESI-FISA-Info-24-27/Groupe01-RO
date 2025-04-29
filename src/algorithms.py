@@ -103,3 +103,25 @@ class Algorithms:
             for i in range(len(tour) - 1):
                 total_cost += graph.get_edge_weight(tour[i], tour[i + 1])
         return total_cost
+    
+    @staticmethod
+    def optimize_truck_loads(num_packages, truck_capacity):
+        """
+        Optimizes the number of trucks and the number of packages per truck using a knapsack-like approach.
+
+        Args:
+            num_packages (int): Total number of packages.
+            truck_capacity (int): Maximum capacity of a single truck.
+
+        Returns:
+            tuple: (number_of_trucks, packages_per_truck)
+        """
+        # Calculate the minimum number of trucks needed
+        num_trucks = math.ceil(num_packages / truck_capacity)
+
+        # Distribute packages among trucks
+        packages_per_truck = [truck_capacity] * (num_trucks - 1)
+        last_truck_load = num_packages - sum(packages_per_truck)
+        packages_per_truck.append(last_truck_load)
+
+        return num_trucks, packages_per_truck
