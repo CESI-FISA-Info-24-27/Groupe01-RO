@@ -25,8 +25,6 @@ class Algorithms:
         current_cost = Algorithms.compute_total_cost(graph, current_solution)
         best_cost = current_cost
 
-        print(f"Initial solution cost: {current_cost:.2f}")
-
         for vehicle_id, path in best_solution.items():
             graph.set_tsp_path(vehicle_id, path)
 
@@ -85,13 +83,11 @@ class Algorithms:
         for vehicle_id, tour in solution.items():
             # Check if the tour starts and ends at the same node
             if tour[0] != tour[-1]:
-                print(f"Vehicle {vehicle_id} does not complete a tour: {tour}")
                 return False
 
             # Check if all edges in the tour exist in the graph
             for i in range(len(tour) - 1):
                 if not graph.graph.has_edge(tour[i], tour[i + 1]):
-                    print(f"Invalid edge ({tour[i]}, {tour[i + 1]}) for vehicle {vehicle_id}")
                     return False
 
         return True

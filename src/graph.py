@@ -240,8 +240,8 @@ class Graph:
                 nx.draw_networkx_edge_labels(self.graph, new_positions, edge_labels=edge_labels, font_size=3, ax=ax)
         else:
             print(f"The number of cities ({len(self.graph.nodes)}) exceeds {max_labels}. Labels and weights will not be displayed.")
-            
-        # Highlight vehicle paths with distinct colors and calculate distances
+
+        # Highlight vehicle paths
         if vehicle_paths:
             colors = [
                 'red', 'blue', 'green', 'purple', 'cyan', 'orange', 'pink', 'brown', 
@@ -269,12 +269,32 @@ class Graph:
                 start_node = path_nodes[0]
                 nx.draw_networkx_nodes(self.graph, new_positions, nodelist=[start_node], node_color=color, node_size=50, ax=ax)
 
-                # Display the distance for each vehicle
-                ax.text(0.05, 0.95 - 0.05 * vehicle_id, f"Vehicle {vehicle_id + 1}: {distances_per_vehicle[vehicle_id]:.2f} km",
-                        transform=ax.transAxes, fontsize=8, color=color)
+            # Draw the distance information in a box
+            box_width = 0.20  # Narrower box
+            box_height = 0.05 * (len(vehicle_paths) + 2)  # Adjust height based on the number of vehicles
+            box_x = 0.01  # Move the box to the bottom-left corner
+            box_y = 0.01
 
-            # Display the total distance
-            ax.text(0.05, 0.05, f"Total Distance: {total_distance:.2f} km", transform=ax.transAxes, fontsize=10, color='black')
+            # Add a rectangle for the box
+            rect = plt.Rectangle((box_x, box_y), box_width, box_height, transform=ax.transAxes,
+                                color='black', alpha=0.6, zorder=10, edgecolor='black')
+            ax.add_patch(rect)
+
+            # Add text and color rectangles for each vehicle's distance
+            y_offset = box_y + box_height - 0.05
+            for vehicle_id, distance in distances_per_vehicle.items():
+                # Add a small rectangle with the vehicle's color
+                rect_y_centered = y_offset - 0.015  # Center the rectangle vertically with the text
+                ax.add_patch(plt.Rectangle((box_x + 0.01, rect_y_centered), 0.02, 0.03, transform=ax.transAxes,
+                                            color=colors[vehicle_id % len(colors)], zorder=11))
+                # Add the distance text in white
+                ax.text(box_x + 0.04, y_offset, f"Vehicle {vehicle_id + 1}: {distance:.2f} km",
+                        transform=ax.transAxes, fontsize=8, color='white', zorder=12)
+                y_offset -= 0.05
+
+            # Add total distance
+            ax.text(box_x + 0.01, y_offset, f"Total: {total_distance:.2f} km",
+                    transform=ax.transAxes, fontsize=9, color='white', zorder=12)
 
         plt.axis('off')
         plt.tight_layout()
@@ -337,8 +357,8 @@ class Graph:
                 nx.draw_networkx_edge_labels(self.graph, new_positions, edge_labels=edge_labels, font_size=3, ax=ax)
         else:
             print(f"The number of cities ({len(self.graph.nodes)}) exceeds {max_labels}. Labels and weights will not be displayed.")
-            
-        # Highlight vehicle paths with distinct colors and calculate distances
+
+        # Highlight vehicle paths
         if vehicle_paths:
             colors = [
                 'red', 'blue', 'green', 'purple', 'cyan', 'orange', 'pink', 'brown', 
@@ -366,19 +386,39 @@ class Graph:
                 start_node = path_nodes[0]
                 nx.draw_networkx_nodes(self.graph, new_positions, nodelist=[start_node], node_color=color, node_size=50, ax=ax)
 
-                # Display the distance for each vehicle
-                ax.text(0.05, 0.95 - 0.05 * vehicle_id, f"Vehicle {vehicle_id + 1}: {distances_per_vehicle[vehicle_id]:.2f} km",
-                        transform=ax.transAxes, fontsize=8, color=color)
+            # Draw the distance information in a box
+            box_width = 0.20  # Narrower box
+            box_height = 0.05 * (len(vehicle_paths) + 2)  # Adjust height based on the number of vehicles
+            box_x = 0.01  # Move the box to the bottom-left corner
+            box_y = 0.01
 
-            # Display the total distance
-            ax.text(0.05, 0.05, f"Total Distance: {total_distance:.2f} km", transform=ax.transAxes, fontsize=10, color='black')
+            # Add a rectangle for the box
+            rect = plt.Rectangle((box_x, box_y), box_width, box_height, transform=ax.transAxes,
+                                color='black', alpha=0.6, zorder=10, edgecolor='black')
+            ax.add_patch(rect)
+
+            # Add text and color rectangles for each vehicle's distance
+            y_offset = box_y + box_height - 0.05
+            for vehicle_id, distance in distances_per_vehicle.items():
+                # Add a small rectangle with the vehicle's color
+                rect_y_centered = y_offset - 0.015  # Center the rectangle vertically with the text
+                ax.add_patch(plt.Rectangle((box_x + 0.01, rect_y_centered), 0.02, 0.03, transform=ax.transAxes,
+                                            color=colors[vehicle_id % len(colors)], zorder=11))
+                # Add the distance text in white
+                ax.text(box_x + 0.04, y_offset, f"Vehicle {vehicle_id + 1}: {distance:.2f} km",
+                        transform=ax.transAxes, fontsize=8, color='white', zorder=12)
+                y_offset -= 0.05
+
+            # Add total distance
+            ax.text(box_x + 0.01, y_offset, f"Total: {total_distance:.2f} km",
+                    transform=ax.transAxes, fontsize=9, color='white', zorder=12)
 
         plt.axis('off')
         plt.tight_layout()
 
         # Save the graph to the specified path as PNG with the specified DPI
         plt.savefig(path, format='png', bbox_inches='tight', dpi=dpi)
-        plt.close(fig)  # Close the figure to free memory
+        plt.clf()
 
     def haversine_distance(coord1, coord2):
         """
