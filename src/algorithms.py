@@ -198,7 +198,7 @@ class Algorithms:
     @staticmethod
     def optimize_truck_loads(num_packages, truck_capacity):
         """
-        Optimizes the number of trucks and the number of packages per truck using a knapsack-like approach.
+        Optimizes the number of trucks and the number of packages per truck using a balanced approach.
 
         Args:
             num_packages (int): Total number of packages.
@@ -210,9 +210,15 @@ class Algorithms:
         # Calculate the minimum number of trucks needed
         num_trucks = math.ceil(num_packages / truck_capacity)
 
-        # Distribute packages among trucks
-        packages_per_truck = [truck_capacity] * (num_trucks - 1)
-        last_truck_load = num_packages - sum(packages_per_truck)
-        packages_per_truck.append(last_truck_load)
+        # Calculate the average load per truck
+        avg_load = num_packages // num_trucks
+        remainder = num_packages % num_trucks
 
-        return num_trucks, packages_per_truck
+        # Distribute packages among trucks
+        packages_per_truck = [avg_load] * num_trucks
+
+        # Distribute the remainder evenly
+        for i in range(remainder):
+            packages_per_truck[i] += 1
+
+        return packages_per_truck
