@@ -12,7 +12,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 from graph import Graph
 
 
-def test_spatial_complexity(display = False):
+def test_spatial_complexity():
     results = []
     tailles = [i for i in range(100, 1000, 100)]
     densites = [0.001, 0.01, 0.05, 0.1, 0.15, 0.20, 0.25, 0.3]
@@ -30,32 +30,43 @@ def test_spatial_complexity(display = False):
             results.append({
                 'size': n,
                 'density': d,
-                'used_memory_kB': current / 1024,
+                'used_memory_MB': current / 1024**2,
             })
 
-            results_df = pd.DataFrame(results)
+            print("Success")
+
+    
+    results_df = pd.DataFrame(results)
 
     # === Affichage console pour CI ===
     print("\n=== Résultats de la mesure de complexité spatiale ===\n")
     print(results_df.to_string(index=False))
 
-    if(display) :
-        # Create a graph showing memory usage according to graph's size and density evolution
-        plt.figure(figsize=(10, 6))
-        sns.lineplot(
-            data=results_df,
-            x='size',
-            y='used_memory_kB',
-            hue='density',
-            marker='o',
-            palette='viridis'
-        )
-        plt.title("Memory used according to the graph size")
-        plt.xlabel("Number of vertices (n)")
-        plt.ylabel("Memory used (kB)")
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
+    # Créer le dossier si nécessaire
+    output_dir = Path(__file__).resolve().parent.parent / "data" / "test"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-test_spatial_complexity()
+    # Créer le graphique
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(
+        data=results_df,
+        x='size',
+        y='used_memory_MB',
+        hue='density',
+        marker='o',
+        palette='viridis'
+    )
+    plt.title("Memory used according to the graph size")
+    plt.xlabel("Number of vertices (n)")
+    plt.ylabel("Memory used (MB)")
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Enregistrer le fichier image
+    plot_path = output_dir / "spatial_complexity.png"
+    plt.savefig(plot_path)
+    print(f"Plot saved to {plot_path}")
+
+
+print("Starting space complexity test")
 

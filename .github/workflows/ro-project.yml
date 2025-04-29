@@ -31,6 +31,10 @@ jobs:
           pip install -r requirements.txt
           pip install sphinx sphinx-rtd-theme
 
+      - name: Run tests
+        run: |
+          pytest -s tests/
+
       # Build the Sphinx documentation
       - name: Build Sphinx documentation
         run: |
