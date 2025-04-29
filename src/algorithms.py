@@ -227,3 +227,134 @@ class Algorithms:
             packages_per_truck[i] += 1
 
         return packages_per_truck
+    
+    @staticmethod
+    def genetic_algorithm(graph, population_size, generations, mutation_rate, num_vehicles):
+        """
+        Genetic algorithm for the multi-vehicle TSP problem.
+
+        Args:
+            graph (Graph): The graph object.
+            population_size (int): Number of individuals in the population.
+            generations (int): Number of generations to evolve.
+            mutation_rate (float): Probability of mutation.
+            num_vehicles (int): Number of vehicles.
+
+        Returns:
+            tuple: (best_solution, best_cost)
+        """
+        def initialize_population():
+            """Initializes the population with random valid solutions."""
+            population = []
+            for _ in range(population_size):
+                nodes = list(graph.graph.nodes)
+                start_node = random.choice(nodes)
+                nodes.remove(start_node)
+                random.shuffle(nodes)  # Shuffle nodes for diversity
+                solution = Algorithms.initialize_solution(nodes, start_node, num_vehicles, graph)
+                population.append(solution)
+            return population
+
+        def fitness(solution):
+            """Calculates the fitness of a solution (lower cost is better)."""
+            return 1 / (1 + Algorithms.compute_total_cost(graph, solution))
+
+        def select_parents(population):
+            """Selects two parents using a roulette wheel selection."""
+            fitness_values = [fitness(ind) for ind in population]
+            total_fitness = sum(fitness_values)
+            probabilities = [f / total_fitness for f in fitness_values]
+            parents = random.choices(population, weights=probabilities, k=2)
+            return parents
+
+        def crossover(parent1, parent2):
+            """Performs crossover between two parents to produce an offspring."""
+            offspring = {}
+            for vehicle_id in parent1.keys():
+                if random.random() < 0.5:
+                    offspring[vehicle_id] = parent1[vehicle_id]
+                else:
+                    offspring[vehicle_id] = parent2[vehicle_id]
+
+            # Ensure all nodes are covered and vehicles return to their start
+            all_nodes = set(graph.graph.nodes)
+            covered_nodes = set(node for tour in offspring.values() for node in tour)
+            missing_nodes = all_nodes - covered_nodes
+
+            # Distribute missing nodes among vehicles
+            for node in missing_nodes:
+                vehicle_id = random.choice(list(offspring.keys()))
+                last_node = offspring[vehicle_id][-1]
+                if graph.graph.has_edge(last_node, node):
+                    offspring[vehicle_id].append(node)
+                else:
+                    # Find a valid path to the node
+                    path = nx.shortest_path(graph.graph, source=last_node, target=node, weight='weight')
+                    offspring[vehicle_id].extend(path[1:])
+
+            # Ensure each vehicle returns to its start node
+            for vehicle_id, tour in offspring.items():
+                if tour[0] != tour[-1]:
+                    last_node = tour[-1]
+                    start_node = tour[0]
+                    if graph.graph.has_edge(last_node, start_node):
+                        tour.append(start_node)
+                    else:
+                        # Find a valid path back to the start node
+                        path = nx.shortest_path(graph.graph, source=last_node, target=start_node, weight='weight')
+                        tour.extend(path[1:])
+
+            return offspring
+
+        def mutate(solution):
+            """Mutates a solution by swapping nodes or moving nodes between vehicles."""
+            if random.random() < mutation_rate:
+                neighbor = Algorithms.generate_neighbor_multi_vehicle(graph, solution)
+                if Algorithms.validate_solution(graph, neighbor):
+                    return neighbor
+            return solution
+
+        def validate_population(population):
+            """Ensures all solutions in the population are valid."""
+            return [ind for ind in population if Algorithms.validate_solution(graph, ind)]
+
+        # Initialize population
+        population = initialize_population()
+
+        # Evolve population over generations
+        best_solution = None
+        best_cost = float('inf')
+
+        for generation in range(generations):
+            new_population = []
+
+            for _ in range(population_size):
+                # Select parents
+                parent1, parent2 = select_parents(population)
+
+                # Perform crossover
+                offspring = crossover(parent1, parent2)
+
+                # Perform mutation
+                offspring = mutate(offspring)
+
+                # Add offspring to the new population
+                new_population.append(offspring)
+
+            # Validate the new population
+            population = validate_population(new_population)
+
+            # Update the best solution
+            for individual in population:
+                cost = Algorithms.compute_total_cost(graph, individual)
+                if cost < best_cost:
+                    best_solution = individual
+                    best_cost = cost
+
+            print(f"Generation {generation + 1}: Best cost = {best_cost:.2f}")
+
+        # Update tsp_path in the graph with the best solution
+        for vehicle_id, path in best_solution.items():
+            graph.set_tsp_path(vehicle_id, path)
+
+        return best_solution, best_cost
