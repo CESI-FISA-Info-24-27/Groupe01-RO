@@ -32,6 +32,8 @@ class Algorithms:
 
         temp = initial_temp
 
+        number_iterations = 0
+        number_saves = 0
         while temp > min_temp:
             for _ in range(max_iterations):
                 neighbor_solution = Algorithms.generate_neighbor_multi_vehicle(graph, current_solution)
@@ -48,10 +50,17 @@ class Algorithms:
 
                         for vehicle_id, path in best_solution.items():
                             graph.set_tsp_path(vehicle_id, path)
+                if number_iterations % 500 == 0:
+                    graph.tsp_paths = current_solution
+                    graph.save_graph_png("./data/results/gif/result_graph_{}.png".format(number_saves), True, current_solution)
+                    number_saves += 1
+                number_iterations += 1
 
             print(f"Temperature: {temp:.2f}, Current cost: {current_cost:.2f}, Best cost: {best_cost:.2f}")
             temp *= cooling_rate
-
+        # Display best solution during 3s in the GIF
+        for k in range(10):
+            graph.save_graph_png("./data/results/gif/result_graph_{}.png".format(number_saves+k), True, best_solution)
         # Validate the final solution
         if not Algorithms.validate_solution(graph, best_solution):
             raise ValueError("The solution is invalid: some edges do not exist or tours are incomplete.")
