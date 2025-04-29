@@ -12,42 +12,62 @@ class Algorithms:
     @staticmethod
     def simulated_annealing(graph, initial_temp, min_temp, cooling_rate, max_iterations, num_vehicles):
         """
-        Simulated annealing algorithm for the multi-vehicle TSP problem.
+        Simulated annealing algorithm for the multi-vehicle TSP problem with package delivery system.
+
+        Args:
+            graph (Graph): The graph object.
+            initial_temp (float): Initial temperature for simulated annealing.
+            min_temp (float): Minimum temperature for simulated annealing.
+            cooling_rate (float): Cooling rate for temperature reduction.
+            max_iterations (int): Maximum iterations per temperature level.
+            num_vehicles (int): Number of vehicles.
+
+        Returns:
+            tuple: (best_solution, elapsed_time, package_assignments)
         """
         start_time = time.time()
 
+        # Initialize nodes and starting node
         nodes = list(graph.graph.nodes)
         start_node = random.choice(nodes)
         nodes.remove(start_node)
 
+        # Assign packages to trucks and nodes
+        num_packages = len(nodes) * random.randint(1, 10)  # Assume one package per node
+        truck_capacity = math.ceil(num_packages / num_vehicles)  # Distribute evenly
+        package_assignments = Algorithms.assign_packages_to_trucks_and_nodes(num_packages, truck_capacity, nodes)
+
+        # Initialize solution
         current_solution = Algorithms.initialize_solution(nodes, start_node, num_vehicles, graph)
         best_solution = copy.deepcopy(current_solution)
+
+        # Save initial paths to the graph
+        for vehicle_id, path in best_solution.items():
+            graph.set_tsp_path(vehicle_id, path)
+
         current_cost = Algorithms.compute_total_cost(graph, current_solution)
         best_cost = current_cost
 
         print(f"Initial solution cost: {current_cost:.2f}")
 
-        for vehicle_id, path in best_solution.items():
-            graph.set_tsp_path(vehicle_id, path)
-
         temp = initial_temp
 
         while temp > min_temp:
             for _ in range(max_iterations):
+                # Generate a neighboring solution
                 neighbor_solution = Algorithms.generate_neighbor_multi_vehicle(graph, current_solution)
                 neighbor_cost = Algorithms.compute_total_cost(graph, neighbor_solution)
 
+                # Accept or reject the neighbor solution
                 delta = neighbor_cost - current_cost
                 if delta < 0 or random.random() < math.exp(-delta / temp):
                     current_solution = neighbor_solution
                     current_cost = neighbor_cost
 
+                    # Update the best solution if the neighbor is better
                     if neighbor_cost < best_cost:
                         best_solution = copy.deepcopy(neighbor_solution)
                         best_cost = neighbor_cost
-
-                        for vehicle_id, path in best_solution.items():
-                            graph.set_tsp_path(vehicle_id, path)
 
             print(f"Temperature: {temp:.2f}, Current cost: {current_cost:.2f}, Best cost: {best_cost:.2f}")
             temp *= cooling_rate
@@ -59,7 +79,17 @@ class Algorithms:
         elapsed_time = time.time() - start_time
         print(f"Final solution cost: {best_cost:.2f}")
         print(f"Elapsed time: {elapsed_time:.2f} seconds")
-        return best_solution, elapsed_time
+        
+        print(f"Résumé des colis a déposés : {package_assignments}")
+        for truck_id, assignments in package_assignments.items():
+            for package_id, node in assignments:
+                print(f"Camion {truck_id} a déposé le colis {package_id} au sommet {node}.")
+
+        # Update the best solution paths in the graph
+        for vehicle_id, path in best_solution.items():
+            graph.set_tsp_path(vehicle_id, path)
+
+        return best_solution, elapsed_time, package_assignments
     
     @staticmethod
     def validate_solution(graph, solution):
@@ -222,3 +252,34 @@ class Algorithms:
             packages_per_truck[i] += 1
 
         return packages_per_truck
+    
+    @staticmethod
+    def assign_packages_to_trucks_and_nodes(num_packages, truck_capacity, nodes):
+        """
+        Assigns each package to a truck and a corresponding node based on the result of optimize_truck_loads.
+
+        Args:
+            num_packages (int): Total number of packages.
+            truck_capacity (int): Maximum capacity of a single truck.
+            nodes (list): List of nodes representing destinations for the packages.
+
+        Returns:
+            dict: A dictionary where keys are truck IDs and values are lists of tuples (package_id, node).
+        """
+        # Get the optimized truck loads
+        packages_per_truck = Algorithms.optimize_truck_loads(num_packages, truck_capacity)
+
+        # Assign packages to trucks and nodes
+        package_assignments = {}
+        package_id = 1  # Start package IDs from 1
+        node_index = 0  # Index to track the current node
+
+        for truck_id, num_packages_in_truck in enumerate(packages_per_truck):
+            package_assignments[truck_id] = []
+            for _ in range(num_packages_in_truck):
+                # Assign the package to the current truck and node
+                package_assignments[truck_id].append((package_id, nodes[node_index]))
+                package_id += 1
+                node_index = (node_index + 1) % len(nodes)  # Loop through nodes if needed
+
+        return package_assignments

@@ -27,18 +27,28 @@ def main():
     # Graph generation
     graph = Graph()
     
-    #graph.generate_geo_graph(10000, 0.3)
+    graph.generate_geo_graph(100, 0.5)
     graph.save_graph_svg("./data/results/initial_graph.svg")
     
-    Algorithms.simulated_annealing(graph, 1000, 0.1, 0.9, 50, 5)
+    # Algorithms.simulated_annealing(graph, 1000, 0.1, 0.9, 50, 5)
     
     #print("Vehicle paths: " + str(graph.get_all_tsp_paths()))
-    graph.save_graph_svg("./data/results/final_graph.svg", True, graph.get_all_tsp_paths())
+    # graph.save_graph_svg("./data/results/final_graph.svg", True, graph.get_all_tsp_paths())
 
     # Create GIF
     # png_folder = "./data/results/gif" 
     # output_gif = "./data/results/sa_gif.gif"
     # create_gif_from_png_folder(png_folder, output_gif, duration=300)
-    
+
+    Algorithms.simulated_annealing(
+        graph=graph,
+        initial_temp=1000,
+        min_temp=0.1,
+        cooling_rate=0.95,
+        max_iterations=500,
+        num_vehicles=3,
+    )
+
+    graph.save_graph_svg("./data/results/final_graph.svg", True, graph.get_all_tsp_paths())
 if __name__ == "__main__":
     main()
