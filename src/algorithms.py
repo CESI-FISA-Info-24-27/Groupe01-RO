@@ -56,6 +56,7 @@ class Algorithms:
 
             #print(f"Temperature: {temp:.2f}, Current cost: {current_cost:.2f}, Best cost: {best_cost:.2f}")
             temp *= cooling_rate
+
         # Display best solution during 3s in the GIF
         # for k in range(10):
         #     graph.save_graph_png("./data/results/gif/result_graph_{}.png".format(number_saves+k), True, best_solution)

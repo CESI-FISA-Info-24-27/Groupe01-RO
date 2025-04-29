@@ -38,7 +38,7 @@ def profile_simulated_annealing(n, density, initial_temp, min_temp, cooling_rate
 
     s = io.StringIO()
     ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
-    ps.print_stats(25)  # Top 25 fonctions les plus coûteuses
+    ps.print_stats(50)
 
     raw_text = s.getvalue()
 
@@ -108,7 +108,7 @@ def run_profiling_all():
     print(df.to_string(index=False))
 
     plt.figure(figsize=(10, 6))
-    sns.lineplot(data=df, x='size', y='exec_time_sec', hue='density', marker='o', palette='magma')
+    sns.lineplot(data=df, x='size', y='exec_time_sec', hue='density', marker='o', palette='husl')
     plt.title("Temps d'exécution de Simulated Annealing")
     plt.xlabel("Nombre de sommets (n)")
     plt.ylabel("Temps (secondes)")
@@ -122,6 +122,5 @@ def run_profiling_all():
     plt.savefig(plot_path)
     print(f"📊 Plot saved to {plot_path}")
 
-
 if __name__ == "__main__":
-    run_profiling_all()
+    test_run_profiling_all()
