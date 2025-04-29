@@ -464,7 +464,7 @@ class Graph:
         """
         df = pd.read_csv(
             #geonames_path,
-            "./data/FR/cities_of_france.txt", 
+            "../data/FR/cities_of_france.txt", 
             sep='\t', 
             header=None,
             names=["geonameid", "name", "asciiname", "alternatenames", "latitude", "longitude", 

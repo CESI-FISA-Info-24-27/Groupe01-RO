@@ -14,7 +14,7 @@ class Algorithms:
         """
         Simulated annealing algorithm for the multi-vehicle TSP problem.
         """
-        start_time = time.time()
+        start_time = time.perf_counter()
 
         nodes = list(graph.graph.nodes)
         start_node = random.choice(nodes)
@@ -50,20 +50,20 @@ class Algorithms:
                             graph.set_tsp_path(vehicle_id, path)
                 if number_iterations % 500 == 0:
                     graph.tsp_paths = current_solution
-                    graph.save_graph_png("./data/results/gif/result_graph_{}.png".format(number_saves), True, current_solution)
+                    #graph.save_graph_png("./data/results/gif/result_graph_{}.png".format(number_saves), True, current_solution)
                     number_saves += 1
                 number_iterations += 1
 
-            print(f"Temperature: {temp:.2f}, Current cost: {current_cost:.2f}, Best cost: {best_cost:.2f}")
+            #print(f"Temperature: {temp:.2f}, Current cost: {current_cost:.2f}, Best cost: {best_cost:.2f}")
             temp *= cooling_rate
         # Display best solution during 3s in the GIF
-        for k in range(10):
-            graph.save_graph_png("./data/results/gif/result_graph_{}.png".format(number_saves+k), True, best_solution)
+        # for k in range(10):
+        #     graph.save_graph_png("./data/results/gif/result_graph_{}.png".format(number_saves+k), True, best_solution)
         # Validate the final solution
         if not Algorithms.validate_solution(graph, best_solution):
             raise ValueError("The solution is invalid: some edges do not exist or tours are incomplete.")
 
-        elapsed_time = time.time() - start_time
+        elapsed_time = time.perf_counter() - start_time
         print(f"Final solution cost: {best_cost:.2f}")
         print(f"Elapsed time: {elapsed_time:.2f} seconds")
         return best_solution, elapsed_time
@@ -351,7 +351,7 @@ class Algorithms:
                     best_solution = individual
                     best_cost = cost
 
-            print(f"Generation {generation + 1}: Best cost = {best_cost:.2f}")
+            #print(f"Generation {generation + 1}: Best cost = {best_cost:.2f}")
 
         # Update tsp_path in the graph with the best solution
         for vehicle_id, path in best_solution.items():

@@ -6,8 +6,7 @@ import seaborn as sns
 import cProfile
 import pstats
 import io
-from time import time
-import random
+import pstats
 
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
@@ -22,7 +21,6 @@ def profile_simulated_annealing(n, density, initial_temp, min_temp, cooling_rate
     pr = cProfile.Profile()
     pr.enable()
 
-    start = time()
     try:
         _, elapsed_time = Algorithms.simulated_annealing(
             graph=g,
@@ -42,12 +40,38 @@ def profile_simulated_annealing(n, density, initial_temp, min_temp, cooling_rate
     ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
     ps.print_stats(25)  # Top 25 fonctions les plus coûteuses
 
-    return elapsed_time, s.getvalue()
+    raw_text = s.getvalue()
+
+    filtered_lines = []
+    for line in raw_text.splitlines():
+        if line.strip() == "":
+            continue  # ignorer les lignes vides
+        if line.startswith("   ncalls"):
+            filtered_lines.append(
+                f"{'# appels':>10} {'temps propre (s)':>18} {'/appel':>10} {'temps cumulé (s)':>20} {'/appel cumulé':>18} {'fonction':>20}"
+            )
+            continue
+        if line[0].isdigit() or line.lstrip().startswith("("):
+            parts = line.split(None, 5)
+            if len(parts) == 6:
+                # Extraire le nom de la fonction entre parenthèses
+                func_info = parts[5]
+                func_name = func_info.split(":")[-1].strip()
+                if "(" in func_name and ")" in func_name:
+                    func_name = func_name[func_name.find("(")+1 : func_name.find(")")]
+                formatted_line = f"{parts[0]:>10} {parts[1]:>18} {parts[2]:>10} {parts[3]:>20} {parts[4]:>18} {func_name:>20}"
+                filtered_lines.append(formatted_line)
+
+    filtered_text = "\n".join(filtered_lines)
+
+    return elapsed_time, filtered_text
 
 
 def run_profiling_all():
-    tailles = [100, 200, 300]  # Pour des tests rapides
-    densites = [0.3, 0.5, 0.7]
+    #tailles = [100, 200, 300]  # Pour des tests rapides
+    #densites = [0.3, 0.5, 0.7]
+    tailles = [100]
+    densites = [0.3]
     initial_temp = 1200
     min_temp = 0.1
     cooling_rate = 0.95

@@ -2,8 +2,6 @@ import sys
 from pathlib import Path
 import tracemalloc
 import pandas as pd
-import numpy as np
-from time import time
 import matplotlib.pyplot as plt
 import seaborn as sns
 
