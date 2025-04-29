@@ -22,23 +22,23 @@ serialized_graph_path = os.getenv("SERIALIZE_GRAPH_PATH")
 
 def main():
     # Setup for GIF
-    # clear_folder("./data/results/gif")
+    clear_folder("./data/results/gif")
 
     # Graph generation
     graph = Graph()
     
-    #graph.generate_geo_graph(10000, 0.3)
+    graph.generate_geo_graph(100, 0.7)
     graph.save_graph_svg("./data/results/initial_graph.svg")
     
-    Algorithms.simulated_annealing(graph, 1000, 0.1, 0.9, 50, 5)
+    Algorithms.simulated_annealing(graph, 1200, 0.1, 0.95, 150, 5)
     
     #print("Vehicle paths: " + str(graph.get_all_tsp_paths()))
     graph.save_graph_svg("./data/results/final_graph.svg", True, graph.get_all_tsp_paths())
 
     # Create GIF
-    # png_folder = "./data/results/gif" 
-    # output_gif = "./data/results/sa_gif.gif"
-    # create_gif_from_png_folder(png_folder, output_gif, duration=300)
+    png_folder = "./data/results/gif" 
+    output_gif = "./data/results/sa_gif.gif"
+    create_gif_from_png_folder(png_folder, output_gif, duration=300)
     
 if __name__ == "__main__":
     main()

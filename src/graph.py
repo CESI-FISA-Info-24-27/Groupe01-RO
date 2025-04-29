@@ -283,7 +283,7 @@ class Graph:
         plt.savefig(path, format='svg', bbox_inches='tight')
         plt.clf()
 
-    def save_graph_png(self, path, with_weights=True, vehicle_paths=None, max_labels=250):
+    def save_graph_png(self, path, with_weights=True, vehicle_paths=None, max_labels=250, dpi=300):
         """
         Save the graph as a PNG file with optional geographic context and visual enhancements.
 
@@ -294,6 +294,7 @@ class Graph:
                                             representing the paths of the vehicles. These paths will be highlighted.
             max_labels (int, optional): The maximum number of nodes for which labels and weights will be displayed.
                                         Defaults to 250.
+            dpi (int, optional): The resolution of the output image in dots per inch. Defaults to 300.
 
         Output:
             - Saves the graph visualization as a PNG file at the specified `path`.
@@ -301,7 +302,7 @@ class Graph:
         fig, ax = plt.subplots(figsize=(10, 10))
 
         # Load France shapefile if available
-        if "./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp":
+        if os.path.exists("./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp"):
             france = gpd.read_file("./data/FR/ne_10m_admin_0_countries_fra/ne_10m_admin_0_countries_fra.shp")
             france = france.to_crs(epsg=3857)
 
@@ -336,26 +337,48 @@ class Graph:
                 nx.draw_networkx_edge_labels(self.graph, new_positions, edge_labels=edge_labels, font_size=3, ax=ax)
         else:
             print(f"The number of cities ({len(self.graph.nodes)}) exceeds {max_labels}. Labels and weights will not be displayed.")
-
-        # Highlight vehicle paths
+            
+        # Highlight vehicle paths with distinct colors and calculate distances
         if vehicle_paths:
-            colors = ['red', 'blue', 'green', 'purple', 'cyan']  # Colors for different vehicles
-            for vehicle_id, path in vehicle_paths.items():
-                print(f"Trajet du véhicule {vehicle_id} : {path}")  # Debug
+            colors = [
+                'red', 'blue', 'green', 'purple', 'cyan', 'orange', 'pink', 'brown', 
+                'yellow', 'lime', 'magenta', 'teal', 'gold', 'navy', 'maroon', 'olive', 
+                'coral', 'turquoise', 'indigo', 'violet', 'crimson', 'chartreuse', 
+                'darkorange', 'darkgreen', 'darkblue', 'darkred', 'darkcyan', 'darkmagenta'
+            ]  # Add more colors if needed
+
+            distances_per_vehicle, total_distance = self.calculate_distances(vehicle_paths)
+
+            for vehicle_id, path_nodes in vehicle_paths.items():
                 color = colors[vehicle_id % len(colors)]  # Cycle through colors if there are more vehicles than colors
-                edges = list(zip(path, path[1:]))  # Create edges from the path
-                nx.draw_networkx_edges(self.graph, new_positions, edgelist=edges, edge_color=color, width=2, ax=ax)
+                
+                # Filter edges to include only existing edges in the graph
+                edges = [
+                    (path_nodes[i], path_nodes[i + 1])
+                    for i in range(len(path_nodes) - 1)
+                    if self.graph.has_edge(path_nodes[i], path_nodes[i + 1])
+                ]
+                
+                # Draw the valid edges
+                nx.draw_networkx_edges(self.graph, new_positions, edgelist=edges, edge_color=color, width=0.75, ax=ax)
 
                 # Highlight the starting point of the vehicle
-                start_node = path[0]
+                start_node = path_nodes[0]
                 nx.draw_networkx_nodes(self.graph, new_positions, nodelist=[start_node], node_color=color, node_size=50, ax=ax)
+
+                # Display the distance for each vehicle
+                ax.text(0.05, 0.95 - 0.05 * vehicle_id, f"Vehicle {vehicle_id + 1}: {distances_per_vehicle[vehicle_id]:.2f} km",
+                        transform=ax.transAxes, fontsize=8, color=color)
+
+            # Display the total distance
+            ax.text(0.05, 0.05, f"Total Distance: {total_distance:.2f} km", transform=ax.transAxes, fontsize=10, color='black')
 
         plt.axis('off')
         plt.tight_layout()
-        
-        # Augmenter la résolution (dpi) pour un PNG plus net
-        plt.savefig(path, format='png', bbox_inches='tight', dpi=300)
-        plt.close(fig)  # Fermer la figure pour libérer la mémoire
+
+        # Save the graph to the specified path as PNG with the specified DPI
+        plt.savefig(path, format='png', bbox_inches='tight', dpi=dpi)
+        plt.close(fig)  # Close the figure to free memory
 
     def haversine_distance(coord1, coord2):
         """
