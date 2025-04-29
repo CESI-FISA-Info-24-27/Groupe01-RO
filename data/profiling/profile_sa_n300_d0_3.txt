@@ -1,0 +1,51 @@
+    # appels   temps propre (s)     /appel     temps cumule (s)      /appel cumule fonction                                
+           1              0.093      0.093               55.430             55.430 simulated_annealing                     
+       27601              4.259      0.000               31.336              0.001 compute_total_cost                      
+    16836610             10.967      0.000               27.061              0.000 get_edge_weight                         
+       27600              0.609      0.000               22.524              0.001 generate_neighbor_multi_vehicle         
+17280104/27604             11.116      0.000               21.249              0.001 deepcopy                                
+       27604              0.091      0.000               21.171              0.001 _deepcopy_dict                          
+      138020              3.961      0.000               20.640              0.000 _deepcopy_list                          
+    16836610              3.866      0.000               10.725              0.000 __getitem__                             
+    16836610              5.248      0.000                6.858              0.000 __getitem__                             
+    18613693              3.600      0.000                3.600              0.000 has_edge                                
+    36297286              2.632      0.000                2.632              0.000 {method 'get' of 'dict' objects}        
+    16836610              2.100      0.000                2.100              0.000 __getitem__                             
+    16836611              1.610      0.000                1.610              0.000 __init__                                
+           1              0.001      0.001                1.462              1.462 initialize_solution                     
+     446/223              0.013      0.000                1.461              0.007 __call__                                
+         223              0.000      0.000                1.460              0.007 shortest_path                           
+         223              0.916      0.004                1.447              0.006 bidirectional_dijkstra                  
+    17638956              1.330      0.000                1.330              0.000 {built-in method builtins.id}           
+    17114560              1.099      0.000                1.099              0.000 {method 'append' of 'list' objects}     
+    17114480              1.083      0.000                1.083              0.000 _deepcopy_atomic                        
+     1737076              0.298      0.000                0.457              0.000 <lambda>                                
+       27600              0.081      0.000                0.203              0.000 sample                                  
+      165624              0.093      0.000                0.122              0.000 _keep_alive                             
+      124512              0.076      0.000                0.104              0.000 _randbelow_with_getrandbits             
+       55200              0.022      0.000                0.073              0.000 {built-in method builtins.isinstance}   
+       41503              0.024      0.000                0.071              0.000 choice                                  
+       55200              0.014      0.000                0.051              0.000 __instancecheck__                       
+       27396              0.011      0.000                0.049              0.000 randint                                 
+      233140              0.040      0.000                0.040              0.000 {built-in method _heapq.heappush}       
+       27396              0.020      0.000                0.038              0.000 randrange                               
+       55200              0.022      0.000                0.037              0.000 {built-in method _abc._abc_instancecheck}
+      306054              0.029      0.000                0.029              0.000 {built-in method builtins.len}          
+      233140              0.019      0.000                0.019              0.000 {built-in method builtins.next}         
+      189181              0.017      0.000                0.017              0.000 {method 'getrandbits' of '_random.Random' objects}
+       13902              0.003      0.000                0.015              0.000 __subclasscheck__                       
+       25054              0.013      0.000                0.013              0.000 {built-in method _heapq.heappop}        
+       13902              0.009      0.000                0.012              0.000 {built-in method _abc._abc_subclasscheck}
+      124512              0.011      0.000                0.011              0.000 {method 'bit_length' of 'int' objects}  
+       74642              0.008      0.000                0.008              0.000 {method 'items' of 'dict' objects}      
+       27544              0.007      0.000                0.007              0.000 {built-in method math.exp}              
+       27600              0.004      0.000                0.004              0.000 {method 'keys' of 'dict' objects}       
+       27544              0.004      0.000                0.004              0.000 {method 'random' of '_random.Random' objects}
+       27804              0.003      0.000                0.003              0.000 {method 'add' of 'set' objects}         
+       13698              0.003      0.000                0.003              0.000 {method 'insert' of 'list' objects}     
+       13698              0.003      0.000                0.003              0.000 {method 'pop' of 'list' objects}        
+       13902              0.002      0.000                0.002              0.000 __subclasshook__                        
+         186              0.001      0.000                0.001              0.000 {built-in method builtins.print}        
+         223              0.000      0.000                0.000              0.000 _weight_function                        
+           1              0.000      0.000                0.000              0.000 validate_solution                       
+           1              0.000      0.000                0.000              0.000 shuffle                                 

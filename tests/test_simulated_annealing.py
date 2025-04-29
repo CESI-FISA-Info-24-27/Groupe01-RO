@@ -6,8 +6,9 @@ import seaborn as sns
 import cProfile
 import pstats
 import io
-from time import time
-import random
+import pstats
+import re
+
 
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
@@ -22,7 +23,6 @@ def profile_simulated_annealing(n, density, initial_temp, min_temp, cooling_rate
     pr = cProfile.Profile()
     pr.enable()
 
-    start = time()
     try:
         _, elapsed_time = Algorithms.simulated_annealing(
             graph=g,
@@ -40,12 +40,43 @@ def profile_simulated_annealing(n, density, initial_temp, min_temp, cooling_rate
 
     s = io.StringIO()
     ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
-    ps.print_stats(25)  # Top 25 fonctions les plus coûteuses
+    ps.print_stats(50)
 
-    return elapsed_time, s.getvalue()
+    raw_text = s.getvalue()
+    filtered_lines = []
+
+    # En-tête personnalisé, avec ajustement des largeurs
+    filtered_lines.append(
+        f"{'# appels':>12} {'temps propre (s)':>18} {'/appel':>10} {'temps cumule (s)':>20} {'/appel cumule':>18} {'fonction':<40}"
+    )
+
+    # Regex pour extraire les 5 premières colonnes et le nom de la fonction
+    pattern = re.compile(
+        r"^\s*(\d+[\d/]*)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(.*)"
+    )
+
+    for line in raw_text.splitlines():
+        match = pattern.match(line)
+        if match:
+            ncalls, tottime, percall1, cumtime, percall2, func_info = match.groups()
+
+            # Extraire le nom de la fonction entre parenthèses, s'il y en a
+            func_name = ""
+            if "(" in func_info and ")" in func_info:
+                func_name = func_info[func_info.find("(")+1 : func_info.find(")")]
+            else:
+                func_name = func_info.strip()
+
+            # Formatage avec largeur ajustée pour chaque colonne
+            formatted_line = f"{ncalls:>12} {tottime:>18} {percall1:>10} {cumtime:>20} {percall2:>18} {func_name:<40}"
+            filtered_lines.append(formatted_line)
+
+    filtered_text = "\n".join(filtered_lines)
+    
+    return elapsed_time, filtered_text
 
 
-def run_profiling_all():
+def test_run_profiling_all():
     tailles = [100, 200, 300]  # Pour des tests rapides
     densites = [0.3, 0.5, 0.7]
     initial_temp = 1200
@@ -84,7 +115,7 @@ def run_profiling_all():
     print(df.to_string(index=False))
 
     plt.figure(figsize=(10, 6))
-    sns.lineplot(data=df, x='size', y='exec_time_sec', hue='density', marker='o', palette='magma')
+    sns.lineplot(data=df, x='size', y='exec_time_sec', hue='density', marker='o', palette='husl')
     plt.title("Temps d'exécution de Simulated Annealing")
     plt.xlabel("Nombre de sommets (n)")
     plt.ylabel("Temps (secondes)")
@@ -98,6 +129,5 @@ def run_profiling_all():
     plt.savefig(plot_path)
     print(f"📊 Plot saved to {plot_path}")
 
-
 if __name__ == "__main__":
-    run_profiling_all()
+    test_run_profiling_all()
